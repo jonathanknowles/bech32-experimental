@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
+
 {- HLINT ignore "Use camelCase" -}
 
 module Data.Bech32.DataChar
