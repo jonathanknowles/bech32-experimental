@@ -1,0 +1,43 @@
+cabal-version:      3.4
+name:               bech32m
+version:            0.0.0.0
+-- synopsis:
+-- description:
+homepage:           https://github.com/jonathanknowles/bech32m
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Jonathan Knowles
+maintainer:         mail@jonathanknowles.net
+-- copyright:
+category:           Codec
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    exposed-modules:
+      Data.Bech32.DataChar
+      Data.Word5
+    -- other-modules:
+    -- other-extensions:
+    build-depends:    base ^>=4.21.0.0
+                    , containers
+                    , finitary
+    hs-source-dirs:   components/bech32m
+    default-language: Haskell2010
+
+test-suite bech32m-test
+    import:           warnings
+    default-language: Haskell2010
+    -- other-modules:
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   components/bech32m-test
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.21.0.0,
+        bech32m
