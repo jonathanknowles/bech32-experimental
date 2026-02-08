@@ -20,7 +20,9 @@ common warnings
 library
     import:           warnings
     exposed-modules:
+      Data.Bech32
       Data.Bech32.DataChar
+      Data.Bech32.HumanReadableChar
       Data.Word5
     -- other-modules:
     -- other-extensions:
