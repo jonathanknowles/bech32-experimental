@@ -14,21 +14,32 @@ build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 -- extra-source-files:
 
+common extensions
+    default-extensions:
+      ImportQualifiedPost
+
 common warnings
     ghc-options: -Wall
 
 library
     import:           warnings
+                    , extensions
     exposed-modules:
       Data.Bech32
+      Data.Bech32.Checksum
       Data.Bech32.DataChar
+      Data.Bech32.DataPart
       Data.Bech32.HumanReadableChar
+      Data.Bech32.HumanReadablePart
       Data.Word5
     -- other-modules:
     -- other-extensions:
     build-depends:    base ^>=4.21.0.0
                     , containers
                     , finitary
+                    , nonempty-containers
+                    , text
+                    , vector-sized
     hs-source-dirs:   components/bech32m
     default-language: Haskell2010
 
