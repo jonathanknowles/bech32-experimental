@@ -4,7 +4,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -12,12 +11,16 @@
 module Data.Bech32.HumanReadablePart
   ( HumanReadablePart
   , fromList
-  ) where
+  )
+where
 
 import Data.Bech32.HumanReadableChar (HumanReadableChar)
+import Data.Bech32.HumanReadableChar qualified as HumanReadableChar
 import Data.Data (Proxy (Proxy))
 import Data.List.NonEmpty qualified as List (NonEmpty)
 import Data.List.NonEmpty qualified as List.NonEmpty
+import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Type.Ord (OrderingI (EQI, GTI, LTI))
 import Data.Vector.Sized (Vector)
 import Data.Vector.Sized qualified as Vector
@@ -29,7 +32,9 @@ data HumanReadablePart
     (1 <= n, n <= 83) =>
     HumanReadablePart (Vector n HumanReadableChar)
 
-deriving instance Show HumanReadablePart
+instance Show HumanReadablePart where
+  showsPrec _ hrp =
+    showString "fromSymbol @" . shows (toText hrp)
 
 fromList :: List.NonEmpty HumanReadableChar -> Maybe HumanReadablePart
 fromList (List.NonEmpty.toList -> cs) = do
@@ -37,6 +42,10 @@ fromList (List.NonEmpty.toList -> cs) = do
   LEQ <- minLength `assertLEQ` n
   LEQ <- n `assertLEQ` maxLength
   HumanReadablePart <$> Vector.fromList @n cs
+
+toText :: HumanReadablePart -> Text
+toText (HumanReadablePart cs) =
+  Text.pack $ HumanReadableChar.toChar <$> Vector.toList cs
 
 --------------------------------------------------------------------------------
 -- Utilities
