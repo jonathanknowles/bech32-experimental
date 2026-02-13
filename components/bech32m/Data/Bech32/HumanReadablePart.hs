@@ -34,27 +34,27 @@ deriving instance Show HumanReadablePart
 fromList :: List.NonEmpty HumanReadableChar -> Maybe HumanReadablePart
 fromList (List.NonEmpty.toList -> cs) = do
   SomeNat (n :: Proxy n) <- someNatVal (fromIntegral @Int @Integer $ length cs)
-  LE <- minLength `assertLE` n
-  LE <- n `assertLE` maxLength
+  LEQ <- minLength `assertLEQ` n
+  LEQ <- n `assertLEQ` maxLength
   HumanReadablePart <$> Vector.fromList @n cs
 
 --------------------------------------------------------------------------------
 -- Utilities
 --------------------------------------------------------------------------------
 
-data LE (a :: Nat) (b :: Nat) where
-  LE :: a <= b => LE a b
+data LEQ (a :: Nat) (b :: Nat) where
+  LEQ :: a <= b => LEQ a b
 
-assertLE
+assertLEQ
   :: forall a b
    . KnownNat a
   => KnownNat b
   => Proxy a
   -> Proxy b
-  -> Maybe (LE a b)
-assertLE proxyA proxyB = case proxyA `cmpNat` proxyB of
-  LTI -> Just LE
-  EQI -> Just LE
+  -> Maybe (LEQ a b)
+assertLEQ proxyA proxyB = case proxyA `cmpNat` proxyB of
+  LTI -> Just LEQ
+  EQI -> Just LEQ
   GTI -> Nothing
 
 minLength :: Proxy 1
