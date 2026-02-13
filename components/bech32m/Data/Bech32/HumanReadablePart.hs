@@ -32,6 +32,10 @@ data HumanReadablePart
     (1 <= n, n <= 83) =>
     HumanReadablePart (Vector n HumanReadableChar)
 
+instance Eq HumanReadablePart where
+  HumanReadablePart a == HumanReadablePart b =
+    Vector.fromSized a == Vector.fromSized b
+
 instance Show HumanReadablePart where
   showsPrec _ hrp =
     showString "fromSymbol @" . shows (toText hrp)
