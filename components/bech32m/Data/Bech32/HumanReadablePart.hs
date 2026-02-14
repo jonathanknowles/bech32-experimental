@@ -20,14 +20,19 @@ import Data.Data (Proxy (Proxy))
 import Data.Foldable qualified as Foldable
 import Data.List.NonEmpty qualified as List (NonEmpty)
 import Data.List.NonEmpty qualified as List.NonEmpty
-import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Type.Ord (OrderingI (EQI, GTI, LTI))
 import Data.Vector.Sized (Vector)
 import Data.Vector.Sized qualified as Vector
-import GHC.TypeLits (KnownNat, SomeNat (SomeNat), cmpNat, someNatVal)
-import GHC.TypeNats (Nat, type (<=))
+import GHC.TypeLits
+  ( KnownNat
+  , Nat
+  , SomeNat (SomeNat)
+  , cmpNat
+  , someNatVal
+  , type (<=)
+  )
 
 data HumanReadablePart
   = forall length.
