@@ -29,7 +29,7 @@ import GHC.TypeNats (Nat, type (<=))
 
 data HumanReadablePart
   = forall n.
-    (1 <= n, n <= 83) =>
+    (MinLength <= n, n <= MaxLength) =>
     HumanReadablePart (Vector n HumanReadableChar)
 
 instance Eq HumanReadablePart where
@@ -70,8 +70,11 @@ assertLEQ proxyA proxyB = case proxyA `cmpNat` proxyB of
   EQI -> Just LEQ
   GTI -> Nothing
 
-minLength :: Proxy 1
-minLength = Proxy @1
+type MinLength = 1
+type MaxLength = 83
 
-maxLength :: Proxy 83
-maxLength = Proxy @83
+minLength :: Proxy MinLength
+minLength = Proxy @MinLength
+
+maxLength :: Proxy MaxLength
+maxLength = Proxy @MaxLength

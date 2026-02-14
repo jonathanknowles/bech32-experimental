@@ -142,10 +142,11 @@ type family IsValidChar (c :: Char) :: Constraint where
     , Assert (CharInRange c) (TypeError CharError)
     )
 
-type CharInRange c =
-  (&&)
-    (Not (CmpChar c '!' == 'LT))
-    (Not (CmpChar c '~' == 'GT))
+type family CharInRange (c :: Char) :: Bool where
+  CharInRange c =
+    (&&)
+      (Not (CmpChar c '!' == 'LT))
+      (Not (CmpChar c '~' == 'GT))
 
 type CharError =
   TypeError.Text
