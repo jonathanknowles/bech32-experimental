@@ -34,7 +34,7 @@ library
       Data.Word5
     -- other-modules:
     -- other-extensions:
-    build-depends:    base ^>=4.21.0.0
+    build-depends:    base
                     , containers
                     , finitary
                     , nonempty-containers
@@ -52,5 +52,5 @@ test-suite bech32m-test
     hs-source-dirs:   components/bech32m-test
     main-is:          Main.hs
     build-depends:
-        base ^>=4.21.0.0,
+        base,
         bech32m

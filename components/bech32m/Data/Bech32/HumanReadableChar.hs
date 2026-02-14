@@ -133,8 +133,9 @@ data HumanReadableChar
   deriving anyclass Finitary
 
 instance Show HumanReadableChar where
-  showsPrec _ hrc =
-    showString "fromChar @" . shows (toChar hrc)
+  showsPrec d hrc =
+    showParen (d > 10) $
+      showString "fromChar @" . shows (toChar hrc)
 
 type family KnownValidChar (c :: Char) :: Constraint where
   KnownValidChar c =
