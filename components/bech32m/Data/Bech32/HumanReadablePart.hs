@@ -17,8 +17,10 @@ where
 import Data.Bech32.HumanReadableChar (HumanReadableChar)
 import Data.Bech32.HumanReadableChar qualified as HumanReadableChar
 import Data.Data (Proxy (Proxy))
+import Data.Foldable qualified as Foldable
 import Data.List.NonEmpty qualified as List (NonEmpty)
 import Data.List.NonEmpty qualified as List.NonEmpty
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Type.Ord (OrderingI (EQI, GTI, LTI))
@@ -28,9 +30,9 @@ import GHC.TypeLits (KnownNat, SomeNat (SomeNat), cmpNat, someNatVal)
 import GHC.TypeNats (Nat, type (<=))
 
 data HumanReadablePart
-  = forall n.
-    (MinLength <= n, n <= MaxLength) =>
-    HumanReadablePart (Vector n HumanReadableChar)
+  = forall length.
+    (MinLength <= length, length <= MaxLength) =>
+    HumanReadablePart (Vector length HumanReadableChar)
 
 instance Eq HumanReadablePart where
   HumanReadablePart a == HumanReadablePart b =
@@ -41,11 +43,14 @@ instance Show HumanReadablePart where
     showString "fromSymbol @" . shows (toText hrp)
 
 fromList :: List.NonEmpty HumanReadableChar -> Maybe HumanReadablePart
-fromList (List.NonEmpty.toList -> cs) = do
-  SomeNat (n :: Proxy n) <- someNatVal (fromIntegral @Int @Integer $ length cs)
-  LEQ <- minLength `assertLEQ` n
-  LEQ <- n `assertLEQ` maxLength
-  HumanReadablePart <$> Vector.fromList @n cs
+fromList (List.NonEmpty.toList -> list) = do
+  SomeNat (listLength :: Proxy listLength) <- naturalLength list
+  LEQ <- minLength `assertLEQ` listLength
+  LEQ <- listLength `assertLEQ` maxLength
+  HumanReadablePart <$> Vector.fromList @listLength list
+  where
+    naturalLength :: Foldable f => f a -> Maybe SomeNat
+    naturalLength = someNatVal . fromIntegral @Int @Integer . Foldable.length
 
 toText :: HumanReadablePart -> Text
 toText (HumanReadablePart cs) =
@@ -71,6 +76,7 @@ assertLEQ proxyA proxyB = case proxyA `cmpNat` proxyB of
   GTI -> Nothing
 
 type MinLength = 1
+
 type MaxLength = 83
 
 minLength :: Proxy MinLength
