@@ -136,14 +136,14 @@ instance Show HumanReadableChar where
   showsPrec _ hrc =
     showString "fromChar @" . shows (toChar hrc)
 
-type family IsValidChar (c :: Char) :: Constraint where
-  IsValidChar c =
+type family KnownValidChar (c :: Char) :: Constraint where
+  KnownValidChar c =
     ( KnownChar c
-    , Assert (CharInRange c) (TypeError CharError)
+    , Assert (ValidChar c) (TypeError CharError)
     )
 
-type family CharInRange (c :: Char) :: Bool where
-  CharInRange c =
+type family ValidChar (c :: Char) :: Bool where
+  ValidChar c =
     (&&)
       (Not (CmpChar c '!' == 'LT))
       (Not (CmpChar c '~' == 'GT))
@@ -152,7 +152,7 @@ type CharError =
   TypeError.Text
     "A HumanReadableChar must be a character in the range ['!' .. '~']."
 
-fromChar :: forall c. IsValidChar c => HumanReadableChar
+fromChar :: forall c. KnownValidChar c => HumanReadableChar
 fromChar =
     fromMaybe unexpectedOutOfRange $ fromCharMaybe $ charVal $ Proxy @c
   where
