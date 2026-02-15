@@ -14,6 +14,7 @@ module Data.Bech32.HumanReadablePart
   ( HumanReadablePart
   , fromList
   , fromSymbol
+  , length
   )
 where
 
@@ -50,10 +51,21 @@ import GHC.TypeLits
   , type (<=)
   )
 import Numeric.Natural (Natural)
+import Prelude hiding (length)
+import GHC.TypeNats (natVal)
 
+-- the max length of 83 characters comes from
+-- 90 - 6 (min length of data part) - 1 (length of separator).
+--
+-- Is there any point to limiting it here? Really, the actual limit depends on
+-- the length of the oerall Bech32 string, which we don't have access to.
+--
+-- By getting rid of the limit here, we can allow this to be a normal semigroup
+-- with append.
+--
 data HumanReadablePart
   = forall length.
-    (MinLength <= length, length <= MaxLength) =>
+    (KnownNat length, MinLength <= length, length <= MaxLength) =>
     HumanReadablePart (Vector length HumanReadableChar)
 
 instance Eq HumanReadablePart where
@@ -68,6 +80,10 @@ instance Show HumanReadablePart where
   showsPrec d hrp =
     showParen (d > 10) $
       showString "fromSymbol @" . shows (toText hrp)
+
+length :: HumanReadablePart -> Natural
+length (HumanReadablePart (_ :: Vector length HumanReadableChar)) =
+  natVal (Proxy @length)
 
 fromList :: List.NonEmpty HumanReadableChar -> Maybe HumanReadablePart
 fromList (List.NonEmpty.toList -> list) = do
@@ -89,11 +105,11 @@ fromList (List.NonEmpty.toList -> list) = do
 -- ... A Bech32 prefix may not be longer than 83 characters.
 -- ...
 --
--- >>> fromSymbol @"AAAA±AAAA"
+-- >>> fromSymbol @"AAAA AAAA"
 -- ...
---     • "AAAA±AAAA"
+--     • "AAAA AAAA"
 --            ^
---       Invalid character.
+--       Invalid character at indicated position.
 --       A Bech32 prefix may only contain characters from the range ['!'..'~'].
 -- ...
 --
