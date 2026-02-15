@@ -13,28 +13,26 @@
 module Data.Bech32.HumanReadablePart
   ( HumanReadablePart
   , fromList
-  , fromText
-  , toText
+  , fromSymbol
   )
 where
 
-import Control.Monad ((<=<), (>=>))
+import Control.Monad ((<=<))
 import Data.Bech32.HumanReadableChar (HumanReadableChar)
 import Data.Bech32.HumanReadableChar qualified as HumanReadableChar
 import Data.Data (Proxy (Proxy))
 import Data.Foldable qualified as Foldable
-import Data.Function ((&))
 import Data.Kind (Constraint)
 import Data.List.NonEmpty qualified as List (NonEmpty)
 import Data.List.NonEmpty qualified as List.NonEmpty
-import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Type.Bool (If)
-import Data.Type.Ord (OrderingI (EQI, GTI, LTI))
+import Data.Type.Bool (If, Not)
+import Data.Type.Ord (OrderingI (EQI, GTI, LTI), type (<?))
 import Data.Vector.Sized (Vector)
 import Data.Vector.Sized qualified as Vector
-import GHC.TypeError (Assert)
+import GHC.TypeError (Assert, TypeError)
+import GHC.TypeError qualified as TypeError
 import GHC.TypeLits
   ( ConsSymbol
   , KnownNat
@@ -42,8 +40,11 @@ import GHC.TypeLits
   , Nat
   , SomeNat (SomeNat)
   , Symbol
+  , UnconsSymbol
   , cmpNat
   , someNatVal
+  , symbolVal
+  , type (+)
   , type (-)
   , type (<=)
   )
@@ -77,9 +78,58 @@ fromList (List.NonEmpty.toList -> list) = do
     naturalLength :: Foldable f => f a -> Maybe SomeNat
     naturalLength = someNatVal . fromIntegral @Int @Integer . Foldable.length
 
+-- >>> fromSymbol @""
+-- ...
+-- ... A Bech32 prefix must have at least one character.
+-- ...
+--
+-- >>> fromSymbol @(RepeatChar 84 'A')
+-- ...
+-- ... A Bech32 prefix may not be longer than 83 characters.
+-- ...
+--
+-- >>> fromSymbol @"AAAA±AAAA"
+-- ...
+--     • "AAAA±AAAA"
+--            ^
+--       Invalid character.
+--       A Bech32 prefix may only contain characters from the range ['!'..'~'].
+-- ...
+--
+fromSymbol :: forall s. KnownValidSymbol s => HumanReadablePart
+fromSymbol =
+  case fromText $ Text.pack $ symbolVal $ Proxy @s of
+    Left e ->
+      error ("HumanReadablePart.fromSymbol: unexpectedFailure:" <> show e)
+    Right hrp ->
+      hrp
+
 type family KnownValidSymbol (s :: Symbol) :: Constraint where
   KnownValidSymbol s =
-    (KnownSymbol s)
+    ( KnownSymbol s
+    , AssertSymbolNotEmpty s
+    , AssertSymbolNotTooLong s
+    , AssertSymbolCharsValid s
+    )
+
+type family AssertSymbolNotEmpty (s :: Symbol) :: Constraint where
+  AssertSymbolNotEmpty s =
+    Assert
+      (Not (SymbolEmpty s))
+      (TypeError (TypeError.Text "EMPTY"))
+
+type family AssertSymbolNotTooLong (s :: Symbol) :: Constraint where
+  AssertSymbolNotTooLong s =
+    Assert
+      (Not (SymbolTooLong s))
+      (TypeError (TypeError.Text "TOO LONG"))
+
+type family AssertSymbolCharsValid (s :: Symbol) :: Constraint where
+  AssertSymbolCharsValid s = AssertSymbolCharsValidInner (SymbolCharInvalid s)
+
+type family AssertSymbolCharsValidInner (n :: Maybe Nat) :: Constraint where
+  AssertSymbolCharsValidInner Nothing = ()
+  AssertSymbolCharsValidInner (Just n) = TypeError (TypeError.Text "CHAR")
 
 data ParseError
   = ParseErrorEmpty
@@ -109,39 +159,48 @@ fromText =
       -> Either ParseError HumanReadablePart
     assertNotTooLong = maybeToEither ParseErrorTooLong . fromList
 
-{-
-type family ValidSymbol (s :: Symbol) :: Either ParseError () where
-  ValidSymbol s =
-    If (SymbolNonEmpty s) SymbolEmpty ()
--}
 type family SymbolEmpty (s :: Symbol) :: Bool where
   SymbolEmpty "" = True
   SymbolEmpty __ = False
+
+type family SymbolTooLong (s :: Symbol) :: Bool where
+  SymbolTooLong s = 83 <? SymbolLength s
+
+type family SymbolLength (s :: Symbol) :: Nat where
+  SymbolLength s = SymbolLengthInner (UnconsSymbol s) 0
+
+type family SymbolCharInvalid (s :: Symbol) :: Maybe Nat where
+  SymbolCharInvalid s = SymbolCharInvalidInner (UnconsSymbol s) 0
+
+type family
+  SymbolCharInvalidInner
+    (m :: Maybe (Char, Symbol))
+    (n :: Nat)
+    :: Maybe Nat
+  where
+  SymbolCharInvalidInner Nothing _ = Nothing
+  SymbolCharInvalidInner (Just '(c, s)) n =
+    If
+      (HumanReadableChar.ValidChar c)
+      (SymbolCharInvalidInner (UnconsSymbol s) (n + 1))
+      (Just n)
+
+type family
+  SymbolLengthInner
+    (m :: Maybe (Char, Symbol))
+    (n :: Nat)
+    :: Nat
+  where
+  SymbolLengthInner Nothing n = n
+  SymbolLengthInner (Just '(c, s)) n =
+    SymbolLengthInner (UnconsSymbol s) (n + 1)
 
 type family RepeatChar (n :: Nat) (c :: Char) :: Symbol where
   RepeatChar 0 c = ""
   RepeatChar n c = ConsSymbol c (RepeatChar (n - 1) c)
 
--- >>> fromSymbol @""
--- ...
--- ... A Bech32 prefix must have at least one character.
--- ...
---
--- >>> fromSymbol @(RepeatChar 84 'A')
--- ...
--- ... A Bech32 prefix may not be longer than 83 characters.
--- ...
---
--- >>> fromSymbol @"AAAA±AAAA"
--- ...
---     • "AAAA±AAAA"
---            ^
---       Invalid character.
---       A Bech32 prefix may only contain characters from the range ['!'..'~'].
--- ...
---
-fromSymbol :: forall s. KnownValidSymbol s => HumanReadablePart
-fromSymbol = undefined
+exampleSymbol :: HumanReadablePart
+exampleSymbol = fromSymbol @"ABCD"
 
 toText :: HumanReadablePart -> Text
 toText (HumanReadablePart cs) =
@@ -177,5 +236,5 @@ maxLength :: Proxy MaxLength
 maxLength = Proxy @MaxLength
 
 maybeToEither :: a -> Maybe b -> Either a b
-maybeToEither a (Just b) = Right b
+maybeToEither _ (Just b) = Right b
 maybeToEither a Nothing = Left a

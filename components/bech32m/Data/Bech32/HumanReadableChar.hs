@@ -18,6 +18,7 @@ module Data.Bech32.HumanReadableChar
   , fromChar
   , fromCharMaybe
   , toChar
+  , ValidChar
   )
 where
 
