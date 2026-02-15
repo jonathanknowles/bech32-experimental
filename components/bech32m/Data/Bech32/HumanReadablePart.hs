@@ -31,10 +31,11 @@ import Data.Type.Bool (If, Not)
 import Data.Type.Ord (OrderingI (EQI, GTI, LTI), type (<?))
 import Data.Vector.Sized (Vector)
 import Data.Vector.Sized qualified as Vector
-import GHC.TypeError (Assert, TypeError)
+import GHC.TypeError (Assert, ErrorMessage (type (:$$:)), TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits
-  ( ConsSymbol
+  ( AppendSymbol
+  , ConsSymbol
   , KnownNat
   , KnownSymbol
   , Nat
@@ -83,7 +84,7 @@ fromList (List.NonEmpty.toList -> list) = do
 -- ... A Bech32 prefix must have at least one character.
 -- ...
 --
--- >>> fromSymbol @(RepeatChar 84 'A')
+-- >>> fromSymbol @(ReplicateChar 84 'A')
 -- ...
 -- ... A Bech32 prefix may not be longer than 83 characters.
 -- ...
@@ -115,20 +116,52 @@ type family AssertSymbolNotEmpty (s :: Symbol) :: Constraint where
   AssertSymbolNotEmpty s =
     Assert
       (Not (SymbolEmpty s))
-      (TypeError (TypeError.Text "EMPTY"))
+      (TypeError (TypeError.Text SymbolEmptyErrorMessage))
+
+type SymbolEmptyErrorMessage =
+  "A Bech32 prefix must have at least one character."
 
 type family AssertSymbolNotTooLong (s :: Symbol) :: Constraint where
   AssertSymbolNotTooLong s =
     Assert
       (Not (SymbolTooLong s))
-      (TypeError (TypeError.Text "TOO LONG"))
+      (TypeError (TypeError.Text SymbolTooLongErrorMessage))
+
+type SymbolTooLongErrorMessage =
+  "A Bech32 prefix may not be longer than 83 characters."
 
 type family AssertSymbolCharsValid (s :: Symbol) :: Constraint where
   AssertSymbolCharsValid s = AssertSymbolCharsValidInner (SymbolCharInvalid s)
 
-type family AssertSymbolCharsValidInner (n :: Maybe Nat) :: Constraint where
+type family
+  AssertSymbolCharsValidInner
+    (n :: Maybe (Symbol, Nat))
+    :: Constraint
+  where
   AssertSymbolCharsValidInner Nothing = ()
-  AssertSymbolCharsValidInner (Just n) = TypeError (TypeError.Text "CHAR")
+  AssertSymbolCharsValidInner (Just '(s, n)) =
+    InvalidCharError s n InvalidCharErrorMessage
+
+type InvalidCharErrorMessage =
+  "A Bech32 prefix may only contain characters from the range ['!'..'~']."
+
+type family
+  InvalidCharError
+    (invalidSymbol :: Symbol)
+    (charIndex :: Nat)
+    (message :: Symbol)
+    :: Constraint
+  where
+  InvalidCharError invalidSymbol charIndex message =
+    TypeError
+      ( TypeError.ShowType
+          invalidSymbol
+          :$$: TypeError.Text (InvalidCharErrorArrow (charIndex + 1))
+          :$$: TypeError.Text "Invalid character at indicated position."
+          :$$: TypeError.Text message
+      )
+
+type InvalidCharErrorArrow n = ReplicateChar n ' ' `AppendSymbol` "^"
 
 data ParseError
   = ParseErrorEmpty
@@ -168,21 +201,22 @@ type family SymbolTooLong (s :: Symbol) :: Bool where
 type family SymbolLength (s :: Symbol) :: Nat where
   SymbolLength s = SymbolLengthInner (UnconsSymbol s) 0
 
-type family SymbolCharInvalid (s :: Symbol) :: Maybe Nat where
-  SymbolCharInvalid s = SymbolCharInvalidInner (UnconsSymbol s) 0
+type family SymbolCharInvalid (s :: Symbol) :: Maybe (Symbol, Nat) where
+  SymbolCharInvalid s = SymbolCharInvalidInner s (UnconsSymbol s) 0
 
 type family
   SymbolCharInvalidInner
+    (s :: Symbol)
     (m :: Maybe (Char, Symbol))
     (n :: Nat)
-    :: Maybe Nat
+    :: Maybe (Symbol, Nat)
   where
-  SymbolCharInvalidInner Nothing _ = Nothing
-  SymbolCharInvalidInner (Just '(c, s)) n =
+  SymbolCharInvalidInner _ Nothing _ = Nothing
+  SymbolCharInvalidInner s0 (Just '(c, s)) n =
     If
       (HumanReadableChar.ValidChar c)
-      (SymbolCharInvalidInner (UnconsSymbol s) (n + 1))
-      (Just n)
+      (SymbolCharInvalidInner s0 (UnconsSymbol s) (n + 1))
+      (Just '(s0, n))
 
 type family
   SymbolLengthInner
@@ -194,12 +228,18 @@ type family
   SymbolLengthInner (Just '(c, s)) n =
     SymbolLengthInner (UnconsSymbol s) (n + 1)
 
-type family RepeatChar (n :: Nat) (c :: Char) :: Symbol where
-  RepeatChar 0 c = ""
-  RepeatChar n c = ConsSymbol c (RepeatChar (n - 1) c)
+type family ReplicateChar (n :: Nat) (c :: Char) :: Symbol where
+  ReplicateChar n c = ReplicateCharInner "" n c
 
-exampleSymbol :: HumanReadablePart
-exampleSymbol = fromSymbol @"ABCD"
+type family
+  ReplicateCharInner
+    (s :: Symbol)
+    (n :: Nat)
+    (c :: Char)
+    :: Symbol
+  where
+  ReplicateCharInner s 0 _ = s
+  ReplicateCharInner s n c = ReplicateCharInner (ConsSymbol c s) (n - 1) c
 
 toText :: HumanReadablePart -> Text
 toText (HumanReadablePart cs) =
