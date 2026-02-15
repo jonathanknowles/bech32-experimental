@@ -98,11 +98,10 @@ fromList (List.NonEmpty.toList -> list) = do
 --
 fromSymbol :: forall s. KnownValidSymbol s => HumanReadablePart
 fromSymbol =
-  case fromText $ Text.pack $ symbolVal $ Proxy @s of
-    Left e ->
-      error ("HumanReadablePart.fromSymbol: unexpectedFailure:" <> show e)
-    Right hrp ->
-      hrp
+  fromRight handleFailure $ fromText $ Text.pack $ symbolVal $ Proxy @s
+  where
+    handleFailure e =
+      error $ "HumanReadablePart.fromSymbol: unexpected failure:" <> show e
 
 type family KnownValidSymbol (s :: Symbol) :: Constraint where
   KnownValidSymbol s =
@@ -224,6 +223,9 @@ assertLEQ proxyA proxyB = case proxyA `cmpNat` proxyB of
   LTI -> Just LEQ
   EQI -> Just LEQ
   GTI -> Nothing
+
+fromRight :: (a -> b) -> Either a b -> b
+fromRight = (`either` id)
 
 type MinLength = 1
 
