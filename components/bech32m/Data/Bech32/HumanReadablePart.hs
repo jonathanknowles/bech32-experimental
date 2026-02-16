@@ -18,7 +18,7 @@ module Data.Bech32.HumanReadablePart
   )
 where
 
-import Control.Monad ((<=<))
+import Control.Monad ((<=<), (>=>))
 import Data.Bech32.HumanReadableChar (HumanReadableChar)
 import Data.Bech32.HumanReadableChar qualified as HumanReadableChar
 import Data.Data (Proxy (Proxy))
@@ -136,20 +136,17 @@ data ParseError
   deriving (Eq, Show)
 
 fromText :: Text -> Either ParseError HumanReadablePart
-fromText =
-  (assertNotEmpty <=< assertHumanReadable) . Text.unpack
+fromText = assertHumanReadable >=> assertNotEmpty
   where
-    assertHumanReadable :: [Char] -> Either ParseError [HumanReadableChar]
-    assertHumanReadable = traverse parseChar . zip [0 ..]
+    assertHumanReadable :: Text -> Either ParseError [HumanReadableChar]
+    assertHumanReadable = traverse parseChar . zip [0 ..] . Text.unpack
       where
         parseChar (n, c) =
           maybeToEither
             (ParseErrorInvalidChar n)
             (HumanReadableChar.fromCharMaybe c)
 
-    assertNotEmpty
-      :: [HumanReadableChar]
-      -> Either ParseError HumanReadablePart
+    assertNotEmpty :: [HumanReadableChar] -> Either ParseError HumanReadablePart
     assertNotEmpty =
       maybeToEither ParseErrorEmpty . fmap fromList . List.NonEmpty.nonEmpty
 
@@ -173,16 +170,6 @@ type family
       (HumanReadableChar.ValidChar c)
       (SymbolCharInvalidInner s0 (UnconsSymbol s) (n + 1))
       (Just '(s0, n))
-
-type family
-  SymbolLengthInner
-    (m :: Maybe (Char, Symbol))
-    (n :: Nat)
-    :: Nat
-  where
-  SymbolLengthInner Nothing n = n
-  SymbolLengthInner (Just '(c, s)) n =
-    SymbolLengthInner (UnconsSymbol s) (n + 1)
 
 type family ReplicateChar (n :: Nat) (c :: Char) :: Symbol where
   ReplicateChar n c = ReplicateCharInner "" n c
