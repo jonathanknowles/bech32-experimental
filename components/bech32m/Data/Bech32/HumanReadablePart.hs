@@ -54,6 +54,7 @@ import Prelude hiding (length)
 -- $setup
 -- >>> :set -XDataKinds
 -- >>> :set -XTypeApplications
+-- >>> import Data.List.NonEmpty (NonEmpty ((:|)))
 
 newtype HumanReadablePart = HumanReadablePart (NESeq HumanReadableChar)
   deriving newtype (Eq, Ord, Semigroup)
@@ -72,6 +73,12 @@ instance Show HumanReadablePart where
 length :: HumanReadablePart -> Int
 length (HumanReadablePart cs) = NESeq.length cs
 
+-- | Constructs a 'HumanReadablePart' from a list of characters.
+--
+-- >>> import Data.Bech32.HumanReadableChar (fromChar)
+-- >>> fromList (fromChar @'A' :| [fromChar @'B', fromChar @'C', fromChar @'D'])
+-- fromSymbol @"ABCD"
+--
 fromList :: List.NonEmpty HumanReadableChar -> HumanReadablePart
 fromList = HumanReadablePart . NESeq.fromList
 

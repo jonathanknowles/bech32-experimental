@@ -84,8 +84,8 @@ instance Arbitrary DataChar where
   shrink = shrinkBoundedEnum
 
 instance Arbitrary DataPart where
-  arbitrary = DataPart.fromList <$> arbitrary
-  shrink = shrinkMap DataPart.fromList DataPart.toList
+  arbitrary = DataPart.fromWordList <$> arbitrary
+  shrink = shrinkMap DataPart.fromWordList DataPart.toWordList
 
 instance Arbitrary HumanReadableChar where
   arbitrary = arbitraryBoundedEnum

@@ -12,8 +12,8 @@
 
 module Data.Bech32.DataPart
   ( DataPart
-  , fromList
-  , toList
+  , fromWordList
+  , toWordList
   , fromSymbol
   , length
   )
@@ -46,7 +46,6 @@ import Numeric.Natural (Natural)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude hiding (length, words)
 
--- |
 -- $setup
 -- >>> :set -XDataKinds
 -- >>> :set -XTypeApplications
@@ -76,11 +75,15 @@ instance Show DataPart where
 length :: DataPart -> Int
 length (DataPart cs) = Seq.length cs
 
-fromList :: [Word5] -> DataPart
-fromList words = DataPart (Seq.fromList words)
+-- | Constructs a 'DataPart' from a list of words.
+--
+-- >>> fromWordList [0 .. 31]
+-- fromSymbol @"QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L"
+fromWordList :: [Word5] -> DataPart
+fromWordList words = DataPart (Seq.fromList words)
 
-toList :: DataPart -> [Word5]
-toList (DataPart words) = Foldable.toList words
+toWordList :: DataPart -> [Word5]
+toWordList (DataPart words) = Foldable.toList words
 
 -- | Constructs a 'DataPart' from a type-level textual symbol.
 --
@@ -94,7 +97,6 @@ toList (DataPart words) = Foldable.toList words
 --       Invalid character at indicated position.
 --       Characters allowed: [023456789ACDEFGHJKLMNPQRSTUVWXYZ].
 -- ...
---
 fromSymbol :: forall s. KnownValidSymbol s => DataPart
 fromSymbol =
   fromRight handleFailure $ fromText $ Text.pack $ symbolVal $ Proxy @s
@@ -176,7 +178,7 @@ data ParseError
   deriving (Eq, Show)
 
 fromText :: Text -> Either ParseError DataPart
-fromText = fmap fromList . traverse parseChar . zip [0 ..] . Text.unpack
+fromText = fmap fromWordList . traverse parseChar . zip [0 ..] . Text.unpack
   where
     parseChar (n, c) =
       maybeToEither
