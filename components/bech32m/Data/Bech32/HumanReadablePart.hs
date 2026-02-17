@@ -13,16 +13,18 @@
 module Data.Bech32.HumanReadablePart
   ( HumanReadablePart
   , fromList
+  , toList
   , fromSymbol
   , length
   )
 where
 
-import Control.Monad ((<=<), (>=>))
+import Control.Monad ((>=>))
 import Data.Bech32.HumanReadableChar (HumanReadableChar)
 import Data.Bech32.HumanReadableChar qualified as HumanReadableChar
 import Data.Data (Proxy (Proxy))
 import Data.Foldable qualified as Foldable
+import Data.Foldable1 (Foldable1 (toNonEmpty))
 import Data.Kind (Constraint)
 import Data.List.NonEmpty qualified as List (NonEmpty)
 import Data.List.NonEmpty qualified as List.NonEmpty
@@ -45,10 +47,17 @@ import GHC.TypeLits
   , type (-)
   )
 import Numeric.Natural (Natural)
+import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude hiding (length)
 
 newtype HumanReadablePart = HumanReadablePart (NESeq HumanReadableChar)
   deriving newtype (Eq, Ord, Semigroup)
+
+instance Read HumanReadablePart where
+  readPrec = parens $ prec 10 $ do
+    Ident "fromSymbol" <- lexP
+    Punc "@" <- lexP
+    unsafeFromText <$> readPrec
 
 instance Show HumanReadablePart where
   showsPrec d hrp =
@@ -60,6 +69,9 @@ length (HumanReadablePart cs) = NESeq.length cs
 
 fromList :: List.NonEmpty HumanReadableChar -> HumanReadablePart
 fromList = HumanReadablePart . NESeq.fromList
+
+toList :: HumanReadablePart -> List.NonEmpty HumanReadableChar
+toList (HumanReadablePart cs) = toNonEmpty cs
 
 -- >>> fromSymbol @""
 -- ...
@@ -149,6 +161,11 @@ fromText = assertHumanReadable >=> assertNotEmpty
     assertNotEmpty :: [HumanReadableChar] -> Either ParseError HumanReadablePart
     assertNotEmpty =
       maybeToEither ParseErrorEmpty . fmap fromList . List.NonEmpty.nonEmpty
+
+unsafeFromText :: Text -> HumanReadablePart
+unsafeFromText = fromRight onFailure . fromText
+  where
+    onFailure = error "unsafeFromText"
 
 type family SymbolEmpty (s :: Symbol) :: Bool where
   SymbolEmpty "" = True

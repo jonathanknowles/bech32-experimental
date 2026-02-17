@@ -1,12 +1,21 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeOperators #-}
 
 {- HLINT ignore "Use camelCase" -}
 
 module Data.Bech32.DataChar
-  ( fromChar
+  ( DataChar
+  , fromChar
+  , fromCharMaybe
   , fromWord5
   , toChar
   , toWord5
@@ -15,9 +24,17 @@ where
 
 import Data.Finitary (Finitary)
 import Data.Ix (Ix)
+import Data.Kind (Constraint)
+import Data.Maybe (fromMaybe)
+import Data.Proxy (Proxy (Proxy))
+import Data.Type.Equality (type (==))
 import Data.Word5 (Word5 (..))
 import GHC.Generics (Generic)
-import Text.Read (readMaybe)
+import GHC.TypeError (Assert, TypeError)
+import GHC.TypeError qualified as TypeError
+import GHC.TypeLits (KnownChar, charVal)
+import Text.Read (Lexeme (Ident, Punc), lexP, parens, prec, readPrec)
+import Data.Type.Bool (Not)
 
 data DataChar
   = DataChar_0
@@ -52,8 +69,19 @@ data DataChar
   | DataChar_X
   | DataChar_Y
   | DataChar_Z
-  deriving stock (Bounded, Enum, Eq, Generic, Ix, Ord, Read, Show)
+  deriving stock (Bounded, Enum, Eq, Generic, Ix, Ord)
   deriving anyclass Finitary
+
+instance Read DataChar where
+  readPrec = parens $ prec 10 $ do
+    Ident "fromChar" <- lexP
+    Punc "@" <- lexP
+    unsafeFromChar <$> readPrec
+
+instance Show DataChar where
+  showsPrec d hrc =
+    showParen (d > 10) $
+      showString "fromChar @" . shows (toChar hrc)
 
 fromWord5 :: Word5 -> DataChar
 fromWord5 = \case
@@ -125,8 +153,129 @@ toWord5 = \case
   DataChar_Y -> Word5_04
   DataChar_Z -> Word5_02
 
-fromChar :: Char -> Maybe DataChar
-fromChar c = readMaybe ("DataChar_" <> [c])
+type family KnownValidChar (c :: Char) :: Constraint where
+  KnownValidChar c =
+    ( KnownChar c
+    , Assert (Not (FromCharMaybe c == Nothing)) (TypeError CharError)
+    )
+
+type CharError =
+  TypeError.Text
+    "A data character must one of [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
+
+type family FromCharMaybe (c :: Char) :: Maybe DataChar where
+  FromCharMaybe '0' = Just DataChar_0
+  FromCharMaybe '2' = Just DataChar_2
+  FromCharMaybe '3' = Just DataChar_3
+  FromCharMaybe '4' = Just DataChar_4
+  FromCharMaybe '5' = Just DataChar_5
+  FromCharMaybe '6' = Just DataChar_6
+  FromCharMaybe '7' = Just DataChar_7
+  FromCharMaybe '8' = Just DataChar_8
+  FromCharMaybe '9' = Just DataChar_9
+  FromCharMaybe 'A' = Just DataChar_A
+  FromCharMaybe 'C' = Just DataChar_C
+  FromCharMaybe 'D' = Just DataChar_D
+  FromCharMaybe 'E' = Just DataChar_E
+  FromCharMaybe 'F' = Just DataChar_F
+  FromCharMaybe 'G' = Just DataChar_G
+  FromCharMaybe 'H' = Just DataChar_H
+  FromCharMaybe 'J' = Just DataChar_J
+  FromCharMaybe 'K' = Just DataChar_K
+  FromCharMaybe 'L' = Just DataChar_L
+  FromCharMaybe 'M' = Just DataChar_M
+  FromCharMaybe 'N' = Just DataChar_N
+  FromCharMaybe 'P' = Just DataChar_P
+  FromCharMaybe 'Q' = Just DataChar_Q
+  FromCharMaybe 'R' = Just DataChar_R
+  FromCharMaybe 'S' = Just DataChar_S
+  FromCharMaybe 'T' = Just DataChar_T
+  FromCharMaybe 'U' = Just DataChar_U
+  FromCharMaybe 'V' = Just DataChar_V
+  FromCharMaybe 'W' = Just DataChar_W
+  FromCharMaybe 'X' = Just DataChar_X
+  FromCharMaybe 'Y' = Just DataChar_Y
+  FromCharMaybe 'Z' = Just DataChar_Z
+  FromCharMaybe _ = Nothing
+
+fromChar :: forall c. KnownValidChar c => DataChar
+fromChar =
+  fromMaybe unexpectedOutOfRange $ fromCharMaybe $ charVal $ Proxy @c
+  where
+    unexpectedOutOfRange = error "DataChar.fromChar"
+
+fromCharMaybe :: Char -> Maybe DataChar
+fromCharMaybe = \case
+  '0' -> Just DataChar_0
+  '2' -> Just DataChar_2
+  '3' -> Just DataChar_3
+  '4' -> Just DataChar_4
+  '5' -> Just DataChar_5
+  '6' -> Just DataChar_6
+  '7' -> Just DataChar_7
+  '8' -> Just DataChar_8
+  '9' -> Just DataChar_9
+  'A' -> Just DataChar_A
+  'C' -> Just DataChar_C
+  'D' -> Just DataChar_D
+  'E' -> Just DataChar_E
+  'F' -> Just DataChar_F
+  'G' -> Just DataChar_G
+  'H' -> Just DataChar_H
+  'J' -> Just DataChar_J
+  'K' -> Just DataChar_K
+  'L' -> Just DataChar_L
+  'M' -> Just DataChar_M
+  'N' -> Just DataChar_N
+  'P' -> Just DataChar_P
+  'Q' -> Just DataChar_Q
+  'R' -> Just DataChar_R
+  'S' -> Just DataChar_S
+  'T' -> Just DataChar_T
+  'U' -> Just DataChar_U
+  'V' -> Just DataChar_V
+  'W' -> Just DataChar_W
+  'X' -> Just DataChar_X
+  'Y' -> Just DataChar_Y
+  'Z' -> Just DataChar_Z
+  _ -> Nothing
+
+unsafeFromChar :: Char -> DataChar
+unsafeFromChar = fromMaybe onFailure . fromCharMaybe
+  where
+    onFailure = error "unsafeFromChar"
 
 toChar :: DataChar -> Char
-toChar c = last (show c)
+toChar = \case
+  DataChar_0 -> '0'
+  DataChar_2 -> '2'
+  DataChar_3 -> '3'
+  DataChar_4 -> '4'
+  DataChar_5 -> '5'
+  DataChar_6 -> '6'
+  DataChar_7 -> '7'
+  DataChar_8 -> '8'
+  DataChar_9 -> '9'
+  DataChar_A -> 'A'
+  DataChar_C -> 'C'
+  DataChar_D -> 'D'
+  DataChar_E -> 'E'
+  DataChar_F -> 'F'
+  DataChar_G -> 'G'
+  DataChar_H -> 'H'
+  DataChar_J -> 'J'
+  DataChar_K -> 'K'
+  DataChar_L -> 'L'
+  DataChar_M -> 'M'
+  DataChar_N -> 'N'
+  DataChar_P -> 'P'
+  DataChar_Q -> 'Q'
+  DataChar_R -> 'R'
+  DataChar_S -> 'S'
+  DataChar_T -> 'T'
+  DataChar_U -> 'U'
+  DataChar_V -> 'V'
+  DataChar_W -> 'W'
+  DataChar_X -> 'X'
+  DataChar_Y -> 'Y'
+  DataChar_Z -> 'Z'

@@ -50,7 +50,7 @@ fromText t =
   DataPart . Seq.fromList <$> traverse charToWord5 (Text.unpack t)
   where
     charToWord5 :: Char -> Maybe Word5
-    charToWord5 = fmap DataChar.toWord5 <$> DataChar.fromChar
+    charToWord5 = fmap DataChar.toWord5 <$> DataChar.fromCharMaybe
 
 fromTextWithChecksum :: Text -> Either () DataPart
 fromTextWithChecksum = undefined

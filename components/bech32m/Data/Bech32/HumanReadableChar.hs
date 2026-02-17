@@ -33,6 +33,7 @@ import GHC.Generics (Generic)
 import GHC.TypeError (Assert, TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits (CmpChar, KnownChar, charVal)
+import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude hiding (maxBound, minBound)
 
 data HumanReadableChar
@@ -132,6 +133,12 @@ data HumanReadableChar
   | HumanReadableChar_126
   deriving stock (Bounded, Enum, Eq, Generic, Ix, Ord)
   deriving anyclass Finitary
+
+instance Read HumanReadableChar where
+  readPrec = parens $ prec 10 $ do
+    Ident "fromChar" <- lexP
+    Punc "@" <- lexP
+    unsafeFromChar <$> readPrec
 
 instance Show HumanReadableChar where
   showsPrec d hrc =
@@ -257,6 +264,11 @@ fromCharMaybe = \case
   '}' -> Just HumanReadableChar_125
   '~' -> Just HumanReadableChar_126
   _ -> Nothing
+
+unsafeFromChar :: Char -> HumanReadableChar
+unsafeFromChar = fromMaybe onFailure . fromCharMaybe
+  where
+    onFailure = error "unsafeFromChar"
 
 toChar :: HumanReadableChar -> Char
 toChar = \case
