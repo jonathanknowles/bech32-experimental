@@ -50,6 +50,11 @@ import Numeric.Natural (Natural)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude hiding (length)
 
+-- |
+-- $setup
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeApplications
+
 newtype HumanReadablePart = HumanReadablePart (NESeq HumanReadableChar)
   deriving newtype (Eq, Ord, Semigroup)
 
@@ -73,6 +78,11 @@ fromList = HumanReadablePart . NESeq.fromList
 toList :: HumanReadablePart -> List.NonEmpty HumanReadableChar
 toList (HumanReadablePart cs) = toNonEmpty cs
 
+-- | Constructs a 'HumanReadablePart' from a type-level textual symbol.
+--
+-- >>> fromSymbol @"AAAA"
+-- fromSymbol @"AAAA"
+--
 -- >>> fromSymbol @""
 -- ...
 -- ... A Bech32 prefix must have at least one character.

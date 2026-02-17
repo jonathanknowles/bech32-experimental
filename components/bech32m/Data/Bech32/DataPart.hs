@@ -10,7 +10,14 @@
 
 {- HLINT ignore "Use newtype instead of data" -}
 
-module Data.Bech32.DataPart where
+module Data.Bech32.DataPart
+  ( DataPart
+  , fromList
+  , toList
+  , fromSymbol
+  , length
+  )
+where
 
 import Data.Bech32.DataChar qualified as DataChar
 import Data.Foldable qualified as Foldable
@@ -37,7 +44,12 @@ import GHC.TypeLits
 import GHC.TypeNats (Nat)
 import Numeric.Natural (Natural)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
-import Prelude hiding (words)
+import Prelude hiding (length, words)
+
+-- |
+-- $setup
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeApplications
 
 -- Note that the checksum part is not stored; this ensures that values of this
 -- type are correct by construction.
@@ -61,12 +73,28 @@ instance Show DataPart where
     showParen (d > 10) $
       showString "fromSymbol @" . shows (toText hrp)
 
+length :: DataPart -> Int
+length (DataPart cs) = Seq.length cs
+
 fromList :: [Word5] -> DataPart
 fromList words = DataPart (Seq.fromList words)
 
 toList :: DataPart -> [Word5]
 toList (DataPart words) = Foldable.toList words
 
+-- | Constructs a 'DataPart' from a type-level textual symbol.
+--
+-- >>> fromSymbol @"AAAA"
+-- fromSymbol @"AAAA"
+--
+-- >>> fromSymbol @"AAAA AAAA"
+-- ...
+--     • "AAAA AAAA"
+--            ^
+--       Invalid character at indicated position.
+--       Characters allowed: [023456789ACDEFGHJKLMNPQRSTUVWXYZ].
+-- ...
+--
 fromSymbol :: forall s. KnownValidSymbol s => DataPart
 fromSymbol =
   fromRight handleFailure $ fromText $ Text.pack $ symbolVal $ Proxy @s
@@ -110,7 +138,7 @@ type family
     InvalidCharError s n InvalidCharErrorMessage
 
 type InvalidCharErrorMessage =
-  "Payloads may only have characters from [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
+  "Characters allowed: [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
 
 type family
   InvalidCharError
