@@ -148,10 +148,10 @@ data ParseError
   deriving (Eq, Show)
 
 fromText :: Text -> Either ParseError HumanReadablePart
-fromText = assertHumanReadable >=> assertNotEmpty
+fromText = assertCharsValid >=> assertNotEmpty
   where
-    assertHumanReadable :: Text -> Either ParseError [HumanReadableChar]
-    assertHumanReadable = traverse parseChar . zip [0 ..] . Text.unpack
+    assertCharsValid :: Text -> Either ParseError [HumanReadableChar]
+    assertCharsValid = traverse parseChar . zip [0 ..] . Text.unpack
       where
         parseChar (n, c) =
           maybeToEither

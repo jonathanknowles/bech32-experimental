@@ -7,8 +7,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 {- HLINT ignore "Use camelCase" -}
 
@@ -19,6 +19,7 @@ module Data.Bech32.DataChar
   , fromWord5
   , toChar
   , toWord5
+  , ValidChar
   )
 where
 
@@ -27,6 +28,7 @@ import Data.Ix (Ix)
 import Data.Kind (Constraint)
 import Data.Maybe (fromMaybe)
 import Data.Proxy (Proxy (Proxy))
+import Data.Type.Bool (Not)
 import Data.Type.Equality (type (==))
 import Data.Word5 (Word5 (..))
 import GHC.Generics (Generic)
@@ -34,7 +36,6 @@ import GHC.TypeError (Assert, TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits (KnownChar, charVal)
 import Text.Read (Lexeme (Ident, Punc), lexP, parens, prec, readPrec)
-import Data.Type.Bool (Not)
 
 data DataChar
   = DataChar_0
@@ -162,6 +163,9 @@ type family KnownValidChar (c :: Char) :: Constraint where
 type CharError =
   TypeError.Text
     "A data character must one of [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
+
+type family ValidChar (c :: Char) :: Bool where
+  ValidChar c = Not (FromCharMaybe c == Nothing)
 
 type family FromCharMaybe (c :: Char) :: Maybe DataChar where
   FromCharMaybe '0' = Just DataChar_0
