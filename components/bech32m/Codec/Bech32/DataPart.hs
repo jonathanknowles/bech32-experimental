@@ -15,6 +15,8 @@ module Codec.Bech32.DataPart
   , fromWordList
   , toWordList
   , fromSymbol
+  , fromText
+  , toText
   , length
   )
 where

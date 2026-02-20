@@ -15,6 +15,8 @@ module Codec.Bech32.HumanReadablePart
   , fromList
   , toList
   , fromSymbol
+  , fromText
+  , toText
   , length
   )
 where
