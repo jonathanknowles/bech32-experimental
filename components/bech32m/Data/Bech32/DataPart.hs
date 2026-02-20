@@ -46,13 +46,6 @@ import Prelude hiding (length, words)
 -- >>> :set -XDataKinds
 -- >>> :set -XTypeApplications
 
--- Note that the checksum part is not stored; this ensures that values of this
--- type are correct by construction.
---
--- But actually:
---
--- data part = payload + checksum
---
 newtype DataPart = DataPart (Seq Word5)
   deriving stock (Eq, Ord)
   deriving newtype (Monoid, Semigroup)

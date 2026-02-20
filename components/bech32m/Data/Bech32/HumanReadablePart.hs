@@ -55,6 +55,7 @@ import Prelude hiding (length)
 
 -- $setup
 -- >>> :set -XDataKinds
+-- >>> :set -XOverloadedLists
 -- >>> :set -XTypeApplications
 -- >>> import Data.List.NonEmpty (NonEmpty ((:|)))
 
@@ -78,7 +79,8 @@ length (HumanReadablePart cs) = NESeq.length cs
 -- | Constructs a 'HumanReadablePart' from a list of characters.
 --
 -- >>> import Data.Bech32.HumanReadableChar (fromChar)
--- >>> fromList (fromChar @'A' :| [fromChar @'B', fromChar @'C', fromChar @'D'])
+--
+-- >>> fromList [fromChar @'A', fromChar @'B', fromChar @'C', fromChar @'D']
 -- fromSymbol @"ABCD"
 fromList :: List.NonEmpty HumanReadableChar -> HumanReadablePart
 fromList = HumanReadablePart . NESeq.fromList
