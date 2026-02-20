@@ -37,7 +37,8 @@ library
       Data.Bech32.HumanReadableChar
       Data.Bech32.HumanReadablePart
       Data.Word5
-    -- other-modules:
+    other-modules:
+      Data.Bech32.Utilities
     -- other-extensions:
     build-depends:    base
                     , containers

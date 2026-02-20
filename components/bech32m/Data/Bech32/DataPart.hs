@@ -20,6 +20,7 @@ module Data.Bech32.DataPart
 where
 
 import Data.Bech32.DataChar qualified as DataChar
+import Data.Bech32.Utilities (InvalidCharError, fromRight, maybeToEither)
 import Data.Foldable qualified as Foldable
 import Data.Kind (Constraint)
 import Data.Proxy (Proxy (Proxy))
@@ -29,17 +30,12 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Type.Bool (If)
 import Data.Word5 (Word5)
-import GHC.TypeError (ErrorMessage (type (:$$:)), TypeError)
-import GHC.TypeError qualified as TypeError
 import GHC.TypeLits
-  ( AppendSymbol
-  , ConsSymbol
-  , KnownSymbol
+  ( KnownSymbol
   , Symbol
   , UnconsSymbol
   , symbolVal
   , type (+)
-  , type (-)
   )
 import GHC.TypeNats (Nat)
 import Numeric.Natural (Natural)
@@ -87,13 +83,16 @@ toWordList (DataPart words) = Foldable.toList words
 
 -- | Constructs a 'DataPart' from a type-level textual symbol.
 --
--- >>> fromSymbol @"AAAA"
--- fromSymbol @"AAAA"
+-- >>> fromSymbol @""
+-- fromSymbol @""
 --
--- >>> fromSymbol @"AAAA AAAA"
+-- >>> fromSymbol @"PQRS"
+-- fromSymbol @"PQRS"
+--
+-- >>> fromSymbol @"ABCD"
 -- ...
---     • "AAAA AAAA"
---            ^
+--     • "ABCD"
+--         ^
 --       Invalid character at indicated position.
 --       Expected a character from the set [023456789ACDEFGHJKLMNPQRSTUVWXYZ].
 -- ...
@@ -142,37 +141,6 @@ type family
 type InvalidCharErrorMessage =
   "Expected a character from the set [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
 
-type family
-  InvalidCharError
-    (invalidSymbol :: Symbol)
-    (charIndex :: Nat)
-    (message :: Symbol)
-    :: Constraint
-  where
-  InvalidCharError invalidSymbol charIndex message =
-    TypeError
-      ( TypeError.ShowType
-          invalidSymbol
-          :$$: TypeError.Text (InvalidCharErrorArrow (charIndex + 1))
-          :$$: TypeError.Text "Invalid character at indicated position."
-          :$$: TypeError.Text message
-      )
-
-type InvalidCharErrorArrow n = ReplicateChar n ' ' `AppendSymbol` "^"
-
-type family ReplicateChar (n :: Nat) (c :: Char) :: Symbol where
-  ReplicateChar n c = ReplicateCharInner "" n c
-
-type family
-  ReplicateCharInner
-    (s :: Symbol)
-    (n :: Nat)
-    (c :: Char)
-    :: Symbol
-  where
-  ReplicateCharInner s 0 _ = s
-  ReplicateCharInner s n c = ReplicateCharInner (ConsSymbol c s) (n - 1) c
-
 data ParseError
   = ParseErrorInvalidChar Natural
   deriving (Eq, Show)
@@ -196,10 +164,3 @@ toText (DataPart words) =
   where
     word5ToChar :: Word5 -> Char
     word5ToChar = DataChar.toChar . DataChar.fromWord5
-
-maybeToEither :: a -> Maybe b -> Either a b
-maybeToEither _ (Just b) = Right b
-maybeToEither a Nothing = Left a
-
-fromRight :: (a -> b) -> Either a b -> b
-fromRight = (`either` id)

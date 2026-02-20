@@ -22,6 +22,12 @@ where
 import Control.Monad ((>=>))
 import Data.Bech32.HumanReadableChar (HumanReadableChar)
 import Data.Bech32.HumanReadableChar qualified as HumanReadableChar
+import Data.Bech32.Utilities
+  ( InvalidCharError
+  , SymbolEmpty
+  , fromRight
+  , maybeToEither
+  )
 import Data.Data (Proxy (Proxy))
 import Data.Foldable qualified as Foldable
 import Data.Foldable1 (Foldable1 (toNonEmpty))
@@ -33,24 +39,20 @@ import Data.Sequence.NonEmpty qualified as NESeq
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Type.Bool (If, Not)
-import GHC.TypeError (Assert, ErrorMessage (type (:$$:)), TypeError)
+import GHC.TypeError (Assert, TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits
-  ( AppendSymbol
-  , ConsSymbol
-  , KnownSymbol
+  ( KnownSymbol
   , Nat
   , Symbol
   , UnconsSymbol
   , symbolVal
   , type (+)
-  , type (-)
   )
 import Numeric.Natural (Natural)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude hiding (length)
 
--- |
 -- $setup
 -- >>> :set -XDataKinds
 -- >>> :set -XTypeApplications
@@ -78,7 +80,6 @@ length (HumanReadablePart cs) = NESeq.length cs
 -- >>> import Data.Bech32.HumanReadableChar (fromChar)
 -- >>> fromList (fromChar @'A' :| [fromChar @'B', fromChar @'C', fromChar @'D'])
 -- fromSymbol @"ABCD"
---
 fromList :: List.NonEmpty HumanReadableChar -> HumanReadablePart
 fromList = HumanReadablePart . NESeq.fromList
 
@@ -102,7 +103,6 @@ toList (HumanReadablePart cs) = toNonEmpty cs
 --       Invalid character at indicated position.
 --       Expected a character from the range: ['!' .. '~'].
 -- ...
---
 fromSymbol :: forall s. KnownValidSymbol s => HumanReadablePart
 fromSymbol =
   fromRight handleFailure $ fromText $ Text.pack $ symbolVal $ Proxy @s
@@ -141,24 +141,6 @@ type family
 type InvalidCharErrorMessage =
   "Expected a character from the range: ['!' .. '~']."
 
-type family
-  InvalidCharError
-    (invalidSymbol :: Symbol)
-    (charIndex :: Nat)
-    (message :: Symbol)
-    :: Constraint
-  where
-  InvalidCharError invalidSymbol charIndex message =
-    TypeError
-      ( TypeError.ShowType
-          invalidSymbol
-          :$$: TypeError.Text (InvalidCharErrorArrow (charIndex + 1))
-          :$$: TypeError.Text "Invalid character at indicated position."
-          :$$: TypeError.Text message
-      )
-
-type InvalidCharErrorArrow n = ReplicateChar n ' ' `AppendSymbol` "^"
-
 data ParseError
   = ParseErrorEmpty
   | ParseErrorInvalidChar Natural
@@ -184,10 +166,6 @@ unsafeFromText = fromRight onFailure . fromText
   where
     onFailure = error "unsafeFromText"
 
-type family SymbolEmpty (s :: Symbol) :: Bool where
-  SymbolEmpty "" = True
-  SymbolEmpty __ = False
-
 type family SymbolCharInvalid (s :: Symbol) :: Maybe (Symbol, Nat) where
   SymbolCharInvalid s = SymbolCharInvalidInner s (UnconsSymbol s) 0
 
@@ -205,30 +183,6 @@ type family
       (SymbolCharInvalidInner s0 (UnconsSymbol s) (n + 1))
       (Just '(s0, n))
 
-type family ReplicateChar (n :: Nat) (c :: Char) :: Symbol where
-  ReplicateChar n c = ReplicateCharInner "" n c
-
-type family
-  ReplicateCharInner
-    (s :: Symbol)
-    (n :: Nat)
-    (c :: Char)
-    :: Symbol
-  where
-  ReplicateCharInner s 0 _ = s
-  ReplicateCharInner s n c = ReplicateCharInner (ConsSymbol c s) (n - 1) c
-
 toText :: HumanReadablePart -> Text
 toText (HumanReadablePart cs) =
   Text.pack $ HumanReadableChar.toChar <$> Foldable.toList cs
-
---------------------------------------------------------------------------------
--- Utilities
---------------------------------------------------------------------------------
-
-fromRight :: (a -> b) -> Either a b -> b
-fromRight = (`either` id)
-
-maybeToEither :: a -> Maybe b -> Either a b
-maybeToEither _ (Just b) = Right b
-maybeToEither a Nothing = Left a
