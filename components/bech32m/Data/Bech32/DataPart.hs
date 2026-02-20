@@ -95,7 +95,7 @@ toWordList (DataPart words) = Foldable.toList words
 --     • "AAAA AAAA"
 --            ^
 --       Invalid character at indicated position.
---       Characters allowed: [023456789ACDEFGHJKLMNPQRSTUVWXYZ].
+--       Expected a character from the set [023456789ACDEFGHJKLMNPQRSTUVWXYZ].
 -- ...
 fromSymbol :: forall s. KnownValidSymbol s => DataPart
 fromSymbol =
@@ -140,7 +140,7 @@ type family
     InvalidCharError s n InvalidCharErrorMessage
 
 type InvalidCharErrorMessage =
-  "Characters allowed: [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
+  "Expected a character from the set [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
 
 type family
   InvalidCharError

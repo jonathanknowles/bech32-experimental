@@ -92,15 +92,15 @@ toList (HumanReadablePart cs) = toNonEmpty cs
 --
 -- >>> fromSymbol @""
 -- ...
--- ... A Bech32 prefix must have at least one character.
+-- ... Expected a non-empty symbol.
 -- ...
 --
 -- >>> fromSymbol @"AAAA AAAA"
 -- ...
 --     • "AAAA AAAA"
 --            ^
---       Invalid character in human-readable part of Bech32 string.
---       Expected a character in the inclusive range: ['!' .. '~'].
+--       Invalid character at indicated position.
+--       Expected a character from the range: ['!' .. '~'].
 -- ...
 --
 fromSymbol :: forall s. KnownValidSymbol s => HumanReadablePart
@@ -124,7 +124,7 @@ type family AssertSymbolNotEmpty (s :: Symbol) :: Constraint where
       (TypeError (TypeError.Text SymbolEmptyErrorMessage))
 
 type SymbolEmptyErrorMessage =
-  "A Bech32 prefix must have at least one character."
+  "Expected a non-empty symbol."
 
 type family AssertSymbolCharsValid (s :: Symbol) :: Constraint where
   AssertSymbolCharsValid s = AssertSymbolCharsValidInner (SymbolCharInvalid s)
@@ -139,7 +139,7 @@ type family
     InvalidCharError s n InvalidCharErrorMessage
 
 type InvalidCharErrorMessage =
-  "A Bech32 prefix may only contain characters from the range ['!'..'~']."
+  "Expected a character from the range: ['!' .. '~']."
 
 type family
   InvalidCharError
