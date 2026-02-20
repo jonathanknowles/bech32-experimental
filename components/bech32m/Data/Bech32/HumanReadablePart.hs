@@ -99,8 +99,8 @@ toList (HumanReadablePart cs) = toNonEmpty cs
 -- ...
 --     • "AAAA AAAA"
 --            ^
---       Invalid character at indicated position.
---       A Bech32 prefix may only contain characters from the range ['!'..'~'].
+--       Invalid character in human-readable part of Bech32 string.
+--       Expected a character in the inclusive range: ['!' .. '~'].
 -- ...
 --
 fromSymbol :: forall s. KnownValidSymbol s => HumanReadablePart
