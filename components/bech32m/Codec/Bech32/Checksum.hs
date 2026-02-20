@@ -1,6 +1,6 @@
 {-# LANGUAGE DerivingStrategies #-}
 
-module Data.Bech32.Checksum where
+module Codec.Bech32.Checksum where
 
 import Data.Word5 (Word5)
 

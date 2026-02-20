@@ -10,7 +10,7 @@
 
 {- HLINT ignore "Use newtype instead of data" -}
 
-module Data.Bech32.DataPart
+module Codec.Bech32.DataPart
   ( DataPart
   , fromWordList
   , toWordList
@@ -19,8 +19,8 @@ module Data.Bech32.DataPart
   )
 where
 
-import Data.Bech32.DataChar qualified as DataChar
-import Data.Bech32.Utilities (InvalidCharError, fromRight, maybeToEither)
+import Codec.Bech32.DataChar qualified as DataChar
+import Codec.Bech32.Utilities (InvalidCharError, fromRight, maybeToEither)
 import Data.Foldable qualified as Foldable
 import Data.Kind (Constraint)
 import Data.Proxy (Proxy (Proxy))

@@ -30,15 +30,15 @@ library
     import:           warnings
                     , extensions
     exposed-modules:
-      Data.Bech32
-      Data.Bech32.Checksum
-      Data.Bech32.DataChar
-      Data.Bech32.DataPart
-      Data.Bech32.HumanReadableChar
-      Data.Bech32.HumanReadablePart
+      Codec.Bech32
+      Codec.Bech32.Checksum
+      Codec.Bech32.DataChar
+      Codec.Bech32.DataPart
+      Codec.Bech32.HumanReadableChar
+      Codec.Bech32.HumanReadablePart
       Data.Word5
     other-modules:
-      Data.Bech32.Utilities
+      Codec.Bech32.Utilities
     -- other-extensions:
     build-depends:    base
                     , containers

@@ -10,7 +10,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Data.Bech32.HumanReadablePart
+module Codec.Bech32.HumanReadablePart
   ( HumanReadablePart
   , fromList
   , toList
@@ -19,15 +19,15 @@ module Data.Bech32.HumanReadablePart
   )
 where
 
-import Control.Monad ((>=>))
-import Data.Bech32.HumanReadableChar (HumanReadableChar)
-import Data.Bech32.HumanReadableChar qualified as HumanReadableChar
-import Data.Bech32.Utilities
+import Codec.Bech32.HumanReadableChar (HumanReadableChar)
+import Codec.Bech32.HumanReadableChar qualified as HumanReadableChar
+import Codec.Bech32.Utilities
   ( InvalidCharError
   , SymbolEmpty
   , fromRight
   , maybeToEither
   )
+import Control.Monad ((>=>))
 import Data.Data (Proxy (Proxy))
 import Data.Foldable qualified as Foldable
 import Data.Foldable1 (Foldable1 (toNonEmpty))
@@ -78,7 +78,7 @@ length (HumanReadablePart cs) = NESeq.length cs
 
 -- | Constructs a 'HumanReadablePart' from a list of characters.
 --
--- >>> import Data.Bech32.HumanReadableChar (fromChar)
+-- >>> import Codec.Bech32.HumanReadableChar (fromChar)
 --
 -- >>> fromList [fromChar @'A', fromChar @'B', fromChar @'C', fromChar @'D']
 -- fromSymbol @"ABCD"

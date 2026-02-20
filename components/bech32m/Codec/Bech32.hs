@@ -1,4 +1,4 @@
-module Data.Bech32 where
+module Codec.Bech32 where
 
 import Data.Text (Text)
 import qualified Data.Text as Text

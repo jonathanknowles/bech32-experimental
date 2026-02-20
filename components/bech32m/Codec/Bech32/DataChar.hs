@@ -12,7 +12,7 @@
 
 {- HLINT ignore "Use camelCase" -}
 
-module Data.Bech32.DataChar
+module Codec.Bech32.DataChar
   ( DataChar
   , fromChar
   , fromCharMaybe

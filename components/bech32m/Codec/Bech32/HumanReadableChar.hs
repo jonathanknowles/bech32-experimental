@@ -13,7 +13,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Data.Bech32.HumanReadableChar
+module Codec.Bech32.HumanReadableChar
   ( HumanReadableChar
   , fromChar
   , fromCharMaybe

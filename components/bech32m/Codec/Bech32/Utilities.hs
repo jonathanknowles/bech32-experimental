@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Data.Bech32.Utilities where
+module Codec.Bech32.Utilities where
 
 import Data.Kind (Constraint)
 import GHC.TypeError (ErrorMessage (type (:$$:)), TypeError)
