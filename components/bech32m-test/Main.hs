@@ -3,21 +3,25 @@
 
 module Main (main) where
 
-import Data.Bech32.DataChar (DataChar)
-import Data.Bech32.DataPart (DataPart)
-import Data.Bech32.DataPart qualified as DataPart
-import Data.Bech32.HumanReadableChar (HumanReadableChar)
-import Data.Bech32.HumanReadablePart (HumanReadablePart)
-import Data.Bech32.HumanReadablePart qualified as HumanReadablePart
+import Codec.Bech32.DataChar (DataChar)
+import Codec.Bech32.DataChar qualified as DataChar
+import Codec.Bech32.DataPart (DataPart)
+import Codec.Bech32.DataPart qualified as DataPart
+import Codec.Bech32.HumanReadableChar (HumanReadableChar)
+import Codec.Bech32.HumanReadablePart (HumanReadablePart)
+import Codec.Bech32.HumanReadablePart qualified as HumanReadablePart
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as List (NonEmpty)
 import Data.Word5 (Word5)
-import Test.Hspec (describe, hspec)
+import Test.Hspec (describe, hspec, it)
 import Test.QuickCheck
   ( Arbitrary (arbitrary, shrink)
+  , Property
+  , Testable (property)
   , arbitraryBoundedEnum
   , shrinkBoundedEnum
   , shrinkMap
+  , (===)
   )
 import Test.QuickCheck.Arbitrary ()
 import Test.QuickCheck.Classes
@@ -78,6 +82,11 @@ main = hspec $ do
       , showLaws
       , showReadLaws
       ]
+  describe "Properties" $ do
+    describe "DataChar" $ do
+      it "prop_DataChar_fromWord5_toWord5" $
+        property
+          prop_DataChar_fromWord5_toWord5
 
 instance Arbitrary DataChar where
   arbitrary = arbitraryBoundedEnum
@@ -102,3 +111,7 @@ instance Arbitrary Word5 where
 instance Arbitrary a => Arbitrary (List.NonEmpty a) where
   arbitrary = (:|) <$> arbitrary <*> arbitrary
   shrink (a :| as) = uncurry (:|) <$> shrink (a, as)
+
+prop_DataChar_fromWord5_toWord5 :: Word5 -> Property
+prop_DataChar_fromWord5_toWord5 word5 =
+  DataChar.toWord5 (DataChar.fromWord5 word5) === word5
