@@ -96,10 +96,10 @@ toList :: HumanReadablePart -> List.NonEmpty HumanReadableChar
 toList (HumanReadablePart cs) = toNonEmpty cs
 
 toWords :: HumanReadablePart -> [Word5]
-toWords (HumanReadablePart cs) = hiBits <> [0] <> loBits
+toWords (HumanReadablePart cs) = hiWords <> [0] <> loWords
   where
-    hiBits = ordinals <&> Word5.fromIntegral . (.>>. 5)
-    loBits = ordinals <&> Word5.fromIntegral
+    hiWords = ordinals <&> Word5.fromIntegral . (.>>. 5)
+    loWords = ordinals <&> Word5.fromIntegral
     ordinals = HumanReadableChar.toOrdinal <$> Foldable.toList cs
 
 -- | Constructs a 'HumanReadablePart' from a type-level textual symbol.
