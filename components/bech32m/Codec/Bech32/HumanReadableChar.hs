@@ -34,7 +34,7 @@ import GHC.TypeError (Assert, TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits (CmpChar, KnownChar, charVal)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
-import Prelude hiding (maxBound, minBound)
+import Prelude
 
 data HumanReadableChar
   = HumanReadableChar_033

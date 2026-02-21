@@ -8,6 +8,7 @@ import Codec.Bech32.DataChar qualified as DataChar
 import Codec.Bech32.DataPart (DataPart)
 import Codec.Bech32.DataPart qualified as DataPart
 import Codec.Bech32.HumanReadableChar (HumanReadableChar)
+import Codec.Bech32.HumanReadableChar qualified as HumanReadableChar
 import Codec.Bech32.HumanReadablePart (HumanReadablePart)
 import Codec.Bech32.HumanReadablePart qualified as HumanReadablePart
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -94,6 +95,12 @@ main = hspec $ do
         property
           prop_DataChar_toChar_fromCharMaybe
     describe "DataPart" $ do
+      it "prop_DataPart_append_fromWordList" $
+        property
+          prop_DataPart_append_fromWordList
+      it "prop_DataPart_append_toWordList" $
+        property
+          prop_DataPart_append_toWordList
       it "prop_DataPart_toText_fromText" $
         property
           prop_DataPart_toText_fromText
@@ -103,9 +110,30 @@ main = hspec $ do
       it "prop_DataPart_fromWordList_toWordList" $
         property
           prop_DataPart_fromWordList_toWordList
-      it "prop_DataPart_append_toWordList" $
+    describe "HumanReadableChar" $ do
+      it "prop_HumanReadableChar_toChar_fromCharMaybe" $
         property
-          prop_DataPart_append_toWordList
+          prop_HumanReadableChar_toChar_fromCharMaybe
+    describe "HumanReadablePart" $ do
+      it "prop_HumanReadablePart_append_fromList" $
+        property
+          prop_HumanReadablePart_append_fromList
+      it "prop_HumanReadablePart_append_toList" $
+        property
+          prop_HumanReadablePart_append_toList
+      it "prop_HumanReadablePart_toText_fromText" $
+        property
+          prop_HumanReadablePart_toText_fromText
+      it "prop_HumanReadablePart_fromList_toList" $
+        property
+          prop_HumanReadablePart_fromList_toList
+      it "prop_HumanReadablePart_toList_fromList" $
+        property
+          prop_HumanReadablePart_toList_fromList
+
+--------------------------------------------------------------------------------
+-- Arbitrary instances
+--------------------------------------------------------------------------------
 
 instance Arbitrary DataChar where
   arbitrary = arbitraryBoundedEnum
@@ -131,6 +159,10 @@ instance Arbitrary a => Arbitrary (List.NonEmpty a) where
   arbitrary = (:|) <$> arbitrary <*> arbitrary
   shrink (a :| as) = uncurry (:|) <$> shrink (a, as)
 
+--------------------------------------------------------------------------------
+-- Properties for DataChar
+--------------------------------------------------------------------------------
+
 prop_DataChar_fromWord5_toWord5 :: Word5 -> Property
 prop_DataChar_fromWord5_toWord5 w =
   DataChar.toWord5 (DataChar.fromWord5 w) === w
@@ -142,6 +174,20 @@ prop_DataChar_toWord5_fromWord5 c =
 prop_DataChar_toChar_fromCharMaybe :: DataChar -> Property
 prop_DataChar_toChar_fromCharMaybe c =
   DataChar.fromCharMaybe (DataChar.toChar c) === Just c
+
+--------------------------------------------------------------------------------
+-- Properties for DataPart
+--------------------------------------------------------------------------------
+
+prop_DataPart_append_fromWordList :: [Word5] -> [Word5] -> Property
+prop_DataPart_append_fromWordList ps qs =
+  DataPart.fromWordList (ps <> qs)
+    === (DataPart.fromWordList ps <> DataPart.fromWordList qs)
+
+prop_DataPart_append_toWordList :: DataPart -> DataPart -> Property
+prop_DataPart_append_toWordList p q =
+  DataPart.toWordList (p <> q)
+    === (DataPart.toWordList p <> DataPart.toWordList q)
 
 prop_DataPart_toText_fromText :: DataPart -> Property
 prop_DataPart_toText_fromText d =
@@ -155,7 +201,42 @@ prop_DataPart_fromWordList_toWordList :: [Word5] -> Property
 prop_DataPart_fromWordList_toWordList ws =
   DataPart.toWordList (DataPart.fromWordList ws) === ws
 
-prop_DataPart_append_toWordList :: DataPart -> DataPart -> Property
-prop_DataPart_append_toWordList p q =
-  DataPart.toWordList (p <> q)
-    === (DataPart.toWordList p <> DataPart.toWordList q)
+--------------------------------------------------------------------------------
+-- Properties for HumanReadableChar
+--------------------------------------------------------------------------------
+
+prop_HumanReadableChar_toChar_fromCharMaybe :: HumanReadableChar -> Property
+prop_HumanReadableChar_toChar_fromCharMaybe c =
+  HumanReadableChar.fromCharMaybe (HumanReadableChar.toChar c) === Just c
+
+--------------------------------------------------------------------------------
+-- Properties for HumanReadablePart
+--------------------------------------------------------------------------------
+
+prop_HumanReadablePart_append_fromList
+  :: NonEmpty HumanReadableChar
+  -> NonEmpty HumanReadableChar
+  -> Property
+prop_HumanReadablePart_append_fromList ps qs =
+  HumanReadablePart.fromList (ps <> qs)
+    === (HumanReadablePart.fromList ps <> HumanReadablePart.fromList qs)
+
+prop_HumanReadablePart_append_toList
+  :: HumanReadablePart
+  -> HumanReadablePart
+  -> Property
+prop_HumanReadablePart_append_toList p q =
+  HumanReadablePart.toList (p <> q)
+    === (HumanReadablePart.toList p <> HumanReadablePart.toList q)
+
+prop_HumanReadablePart_toText_fromText :: HumanReadablePart -> Property
+prop_HumanReadablePart_toText_fromText d =
+  HumanReadablePart.fromText (HumanReadablePart.toText d) === Right d
+
+prop_HumanReadablePart_toList_fromList :: HumanReadablePart -> Property
+prop_HumanReadablePart_toList_fromList d =
+  HumanReadablePart.fromList (HumanReadablePart.toList d) === d
+
+prop_HumanReadablePart_fromList_toList :: NonEmpty HumanReadableChar -> Property
+prop_HumanReadablePart_fromList_toList ws =
+  HumanReadablePart.toList (HumanReadablePart.fromList ws) === ws

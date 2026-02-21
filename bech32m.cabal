@@ -25,6 +25,7 @@ custom-setup
   setup-depends:
     , base
     , cabal-doctest
+    , QuickCheck
 
 library
     import:           warnings
@@ -73,6 +74,7 @@ test-suite bech32m-test-docs
     , base
     , bech32m
     , doctest
+    , QuickCheck
   x-doctest-options: --verbose
   type: exitcode-stdio-1.0
   main-is: Main.hs
