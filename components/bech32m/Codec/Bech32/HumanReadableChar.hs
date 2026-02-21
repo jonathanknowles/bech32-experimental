@@ -18,6 +18,7 @@ module Codec.Bech32.HumanReadableChar
   , fromChar
   , fromCharMaybe
   , toChar
+  , toOrdinal
   , ValidChar
   )
 where
@@ -35,6 +36,7 @@ import GHC.TypeError qualified as TypeError
 import GHC.TypeLits (CmpChar, KnownChar, charVal)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude
+import Data.Word (Word8)
 
 data HumanReadableChar
   = HumanReadableChar_033
@@ -269,6 +271,103 @@ unsafeFromChar :: Char -> HumanReadableChar
 unsafeFromChar = fromMaybe onFailure . fromCharMaybe
   where
     onFailure = error "unsafeFromChar"
+
+toOrdinal :: HumanReadableChar -> Word8
+toOrdinal = \case
+  HumanReadableChar_033 -> 033
+  HumanReadableChar_034 -> 034
+  HumanReadableChar_035 -> 035
+  HumanReadableChar_036 -> 036
+  HumanReadableChar_037 -> 037
+  HumanReadableChar_038 -> 038
+  HumanReadableChar_039 -> 039
+  HumanReadableChar_040 -> 040
+  HumanReadableChar_041 -> 041
+  HumanReadableChar_042 -> 042
+  HumanReadableChar_043 -> 043
+  HumanReadableChar_044 -> 044
+  HumanReadableChar_045 -> 045
+  HumanReadableChar_046 -> 046
+  HumanReadableChar_047 -> 047
+  HumanReadableChar_048 -> 048
+  HumanReadableChar_049 -> 049
+  HumanReadableChar_050 -> 050
+  HumanReadableChar_051 -> 051
+  HumanReadableChar_052 -> 052
+  HumanReadableChar_053 -> 053
+  HumanReadableChar_054 -> 054
+  HumanReadableChar_055 -> 055
+  HumanReadableChar_056 -> 056
+  HumanReadableChar_057 -> 057
+  HumanReadableChar_058 -> 058
+  HumanReadableChar_059 -> 059
+  HumanReadableChar_060 -> 060
+  HumanReadableChar_061 -> 061
+  HumanReadableChar_062 -> 062
+  HumanReadableChar_063 -> 063
+  HumanReadableChar_064 -> 064
+  HumanReadableChar_065 -> 065
+  HumanReadableChar_066 -> 066
+  HumanReadableChar_067 -> 067
+  HumanReadableChar_068 -> 068
+  HumanReadableChar_069 -> 069
+  HumanReadableChar_070 -> 070
+  HumanReadableChar_071 -> 071
+  HumanReadableChar_072 -> 072
+  HumanReadableChar_073 -> 073
+  HumanReadableChar_074 -> 074
+  HumanReadableChar_075 -> 075
+  HumanReadableChar_076 -> 076
+  HumanReadableChar_077 -> 077
+  HumanReadableChar_078 -> 078
+  HumanReadableChar_079 -> 079
+  HumanReadableChar_080 -> 080
+  HumanReadableChar_081 -> 081
+  HumanReadableChar_082 -> 082
+  HumanReadableChar_083 -> 083
+  HumanReadableChar_084 -> 084
+  HumanReadableChar_085 -> 085
+  HumanReadableChar_086 -> 086
+  HumanReadableChar_087 -> 087
+  HumanReadableChar_088 -> 088
+  HumanReadableChar_089 -> 089
+  HumanReadableChar_090 -> 090
+  HumanReadableChar_091 -> 091
+  HumanReadableChar_092 -> 092
+  HumanReadableChar_093 -> 093
+  HumanReadableChar_094 -> 094
+  HumanReadableChar_095 -> 095
+  HumanReadableChar_096 -> 096
+  HumanReadableChar_097 -> 097
+  HumanReadableChar_098 -> 098
+  HumanReadableChar_099 -> 099
+  HumanReadableChar_100 -> 100
+  HumanReadableChar_101 -> 101
+  HumanReadableChar_102 -> 102
+  HumanReadableChar_103 -> 103
+  HumanReadableChar_104 -> 104
+  HumanReadableChar_105 -> 105
+  HumanReadableChar_106 -> 106
+  HumanReadableChar_107 -> 107
+  HumanReadableChar_108 -> 108
+  HumanReadableChar_109 -> 109
+  HumanReadableChar_110 -> 110
+  HumanReadableChar_111 -> 111
+  HumanReadableChar_112 -> 112
+  HumanReadableChar_113 -> 113
+  HumanReadableChar_114 -> 114
+  HumanReadableChar_115 -> 115
+  HumanReadableChar_116 -> 116
+  HumanReadableChar_117 -> 117
+  HumanReadableChar_118 -> 118
+  HumanReadableChar_119 -> 119
+  HumanReadableChar_120 -> 120
+  HumanReadableChar_121 -> 121
+  HumanReadableChar_122 -> 122
+  HumanReadableChar_123 -> 123
+  HumanReadableChar_124 -> 124
+  HumanReadableChar_125 -> 125
+  HumanReadableChar_126 -> 126
 
 toChar :: HumanReadableChar -> Char
 toChar = \case

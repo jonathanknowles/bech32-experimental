@@ -2,7 +2,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 
-module Data.Word5 where
+module Data.Word5
+  ( Word5 (..)
+  , fromIntegral
+  )
+where
 
 import Data.Finitary (Finitary)
 import Data.Ix (Ix)
