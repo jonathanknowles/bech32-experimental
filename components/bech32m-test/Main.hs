@@ -35,7 +35,7 @@ import Test.QuickCheck.Classes
   , semigroupLaws
   , semigroupMonoidLaws
   , showLaws
-  , showReadLaws
+  , showReadLaws, bitsLaws
   )
 import Test.QuickCheck.Classes.Hspec (testLawsMany)
 
@@ -75,7 +75,8 @@ main = hspec $ do
       , showReadLaws
       ]
     testLawsMany @Word5
-      [ boundedEnumLaws
+      [ bitsLaws
+      , boundedEnumLaws
       , eqLaws
       , ixLaws
       , numLaws

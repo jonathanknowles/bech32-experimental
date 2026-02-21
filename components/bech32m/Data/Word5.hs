@@ -8,10 +8,30 @@ module Data.Word5
   )
 where
 
+import Data.Bits
+  ( Bits
+      ( bit
+      , bitSize
+      , bitSizeMaybe
+      , complement
+      , isSigned
+      , popCount
+      , rotate
+      , shift
+      , shiftL
+      , shiftR
+      , testBit
+      , xor
+      , zeroBits
+      , (.&.)
+      , (.|.)
+      )
+  , FiniteBits (finiteBitSize)
+  )
 import Data.Finitary (Finitary)
 import Data.Ix (Ix)
+import Data.Word (Word8)
 import GHC.Generics (Generic)
-import Text.Read (Read (readPrec))
 import Prelude hiding (fromIntegral)
 import Prelude qualified
 
@@ -48,7 +68,7 @@ data Word5
   | Word5_11101
   | Word5_11110
   | Word5_11111
-  deriving stock (Bounded, Enum, Eq, Generic, Ix, Ord)
+  deriving stock (Bounded, Enum, Eq, Generic, Ix, Ord, Read, Show)
   deriving anyclass Finitary
 
 -- | Arithmetic modulo 32.
@@ -61,9 +81,44 @@ instance Num Word5 where
   signum 0 = 0
   signum _ = 1
 
-instance Read Word5 where readPrec = fromInteger <$> readPrec
+instance Bits Word5 where
+  (.&.) a b = fromWord8 (toWord8 a .&. toWord8 b)
+  (.|.) a b = fromWord8 (toWord8 a .|. toWord8 b)
+  xor a b = fromWord8 (toWord8 a `xor` toWord8 b)
+  complement = fromWord8 . complement . toWord8
+  popCount = popCount . toWord8
+  bitSizeMaybe _ = Just 5
+  isSigned _ = False
+  bitSize _ = 5
+  rotate a i =
+    fromWord8 ((x `shiftL` r) .|. (x `shiftR` (5 - r)))
+    where
+      r = i `mod` 5
+      x = toWord8 a
+  shift a i
+    | i >= 0 =
+        fromWord8 (toWord8 a `shiftL` i)
+    | otherwise =
+        fromWord8 (toWord8 a `shiftR` negate i)
+  bit i
+    | 0 <= i && i < 5 =
+        fromWord8 (bit i)
+    | otherwise =
+        zeroBits
+  testBit a i
+    | 0 <= i && i < 5 =
+        testBit (toWord8 a) i
+    | otherwise =
+        False
 
-instance Show Word5 where show = show . fromEnum
+instance FiniteBits Word5 where
+  finiteBitSize _ = 5
+
+fromWord8 :: Word8 -> Word5
+fromWord8 = fromIntegral
+
+toWord8 :: Word5 -> Word8
+toWord8 = toEnum . fromEnum
 
 -- | Creates a 'Word5' from an integral number (modulo 32).
 fromIntegral :: Integral i => i -> Word5
