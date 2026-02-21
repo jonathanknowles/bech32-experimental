@@ -103,9 +103,9 @@ main = hspec $ do
       it "prop_DataPart_fromWordList_toWordList" $
         property
           prop_DataPart_fromWordList_toWordList
-      it "prop_DataPart_distributive_append_toWordList" $
+      it "prop_DataPart_append_toWordList" $
         property
-          prop_DataPart_distributive_append_toWordList
+          prop_DataPart_append_toWordList
 
 instance Arbitrary DataChar where
   arbitrary = arbitraryBoundedEnum
@@ -155,7 +155,7 @@ prop_DataPart_fromWordList_toWordList :: [Word5] -> Property
 prop_DataPart_fromWordList_toWordList ws =
   DataPart.toWordList (DataPart.fromWordList ws) === ws
 
-prop_DataPart_distributive_append_toWordList :: DataPart -> DataPart -> Property
-prop_DataPart_distributive_append_toWordList p q =
+prop_DataPart_append_toWordList :: DataPart -> DataPart -> Property
+prop_DataPart_append_toWordList p q =
   DataPart.toWordList (p <> q)
     === (DataPart.toWordList p <> DataPart.toWordList q)
