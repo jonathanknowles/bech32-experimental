@@ -106,14 +106,14 @@ fromWord5 = \case
   Word5_10001 -> DataChar_3
   Word5_10010 -> DataChar_J
   Word5_10011 -> DataChar_N
-  Word5_11000 -> DataChar_5
-  Word5_11001 -> DataChar_4
-  Word5_11010 -> DataChar_K
-  Word5_11011 -> DataChar_H
-  Word5_10100 -> DataChar_C
-  Word5_10101 -> DataChar_E
-  Word5_10110 -> DataChar_6
-  Word5_10111 -> DataChar_M
+  Word5_10100 -> DataChar_5
+  Word5_10101 -> DataChar_4
+  Word5_10110 -> DataChar_K
+  Word5_10111 -> DataChar_H
+  Word5_11000 -> DataChar_C
+  Word5_11001 -> DataChar_E
+  Word5_11010 -> DataChar_6
+  Word5_11011 -> DataChar_M
   Word5_11100 -> DataChar_U
   Word5_11101 -> DataChar_A
   Word5_11110 -> DataChar_7
@@ -124,23 +124,23 @@ toWord5 = \case
   DataChar_0 -> Word5_01111
   DataChar_2 -> Word5_01010
   DataChar_3 -> Word5_10001
-  DataChar_4 -> Word5_11001
-  DataChar_5 -> Word5_11000
-  DataChar_6 -> Word5_10110
+  DataChar_4 -> Word5_10101
+  DataChar_5 -> Word5_10100
+  DataChar_6 -> Word5_11010
   DataChar_7 -> Word5_11110
   DataChar_8 -> Word5_00111
   DataChar_9 -> Word5_00101
   DataChar_A -> Word5_11101
-  DataChar_C -> Word5_10100
+  DataChar_C -> Word5_11000
   DataChar_D -> Word5_01101
-  DataChar_E -> Word5_10101
+  DataChar_E -> Word5_11001
   DataChar_F -> Word5_01001
   DataChar_G -> Word5_01000
-  DataChar_H -> Word5_11011
+  DataChar_H -> Word5_10111
   DataChar_J -> Word5_10010
-  DataChar_K -> Word5_11010
+  DataChar_K -> Word5_10110
   DataChar_L -> Word5_11111
-  DataChar_M -> Word5_10111
+  DataChar_M -> Word5_11011
   DataChar_N -> Word5_10011
   DataChar_P -> Word5_00001
   DataChar_Q -> Word5_00000
