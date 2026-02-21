@@ -87,6 +87,25 @@ main = hspec $ do
       it "prop_DataChar_fromWord5_toWord5" $
         property
           prop_DataChar_fromWord5_toWord5
+      it "prop_DataChar_toWord5_fromWord5" $
+        property
+          prop_DataChar_toWord5_fromWord5
+      it "prop_DataChar_toChar_fromCharMaybe" $
+        property
+          prop_DataChar_toChar_fromCharMaybe
+    describe "DataPart" $ do
+      it "prop_DataPart_toText_fromText" $
+        property
+          prop_DataPart_toText_fromText
+      it "prop_DataPart_toWordList_fromWordList" $
+        property
+          prop_DataPart_toWordList_fromWordList
+      it "prop_DataPart_fromWordList_toWordList" $
+        property
+          prop_DataPart_fromWordList_toWordList
+      it "prop_DataPart_distributive_append_toWordList" $
+        property
+          prop_DataPart_distributive_append_toWordList
 
 instance Arbitrary DataChar where
   arbitrary = arbitraryBoundedEnum
@@ -113,5 +132,30 @@ instance Arbitrary a => Arbitrary (List.NonEmpty a) where
   shrink (a :| as) = uncurry (:|) <$> shrink (a, as)
 
 prop_DataChar_fromWord5_toWord5 :: Word5 -> Property
-prop_DataChar_fromWord5_toWord5 word5 =
-  DataChar.toWord5 (DataChar.fromWord5 word5) === word5
+prop_DataChar_fromWord5_toWord5 w =
+  DataChar.toWord5 (DataChar.fromWord5 w) === w
+
+prop_DataChar_toWord5_fromWord5 :: DataChar -> Property
+prop_DataChar_toWord5_fromWord5 c =
+  DataChar.fromWord5 (DataChar.toWord5 c) === c
+
+prop_DataChar_toChar_fromCharMaybe :: DataChar -> Property
+prop_DataChar_toChar_fromCharMaybe c =
+  DataChar.fromCharMaybe (DataChar.toChar c) === Just c
+
+prop_DataPart_toText_fromText :: DataPart -> Property
+prop_DataPart_toText_fromText d =
+  DataPart.fromText (DataPart.toText d) === Right d
+
+prop_DataPart_toWordList_fromWordList :: DataPart -> Property
+prop_DataPart_toWordList_fromWordList d =
+  DataPart.fromWordList (DataPart.toWordList d) === d
+
+prop_DataPart_fromWordList_toWordList :: [Word5] -> Property
+prop_DataPart_fromWordList_toWordList ws =
+  DataPart.toWordList (DataPart.fromWordList ws) === ws
+
+prop_DataPart_distributive_append_toWordList :: DataPart -> DataPart -> Property
+prop_DataPart_distributive_append_toWordList p q =
+  DataPart.toWordList (p <> q)
+    === (DataPart.toWordList p <> DataPart.toWordList q)
