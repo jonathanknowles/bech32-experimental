@@ -34,6 +34,7 @@ any f = List.any f . toList
 length :: BitSeq -> Int
 length = List.length . unBitSeq
 
+-- the padding should be non-empty...
 repartitionPad :: (FiniteBits a, FiniteBits b) => BitSeq -> [a] -> [b]
 repartitionPad padBits = toChunksPad padBits . fromChunks
 
