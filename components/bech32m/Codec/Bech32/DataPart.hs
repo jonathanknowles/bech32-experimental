@@ -82,14 +82,14 @@ toWord5List :: DataPart -> [Word5]
 toWord5List (DataPart words) = Foldable.toList words
 
 fromWord8List :: [Word8] -> DataPart
-fromWord8List = fromWord5List . BitSeq.repartitionPad B0
+fromWord8List = fromWord5List . BitSeq.repartitionPad (BitSeq.repeat B0)
 
 toWord8List :: DataPart -> Maybe [Word8]
 toWord8List ws
   | BitSeq.any (== B1) remainder = Nothing
   | otherwise = Just result
   where
-    (result, remainder) = BitSeq.repartitionUnpad (toWord5List ws)
+    (remainder, result) = BitSeq.repartitionUnpad (toWord5List ws)
 
 -- | Constructs a 'DataPart' from a type-level textual symbol.
 --
