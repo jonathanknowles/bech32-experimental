@@ -37,6 +37,7 @@ library
       Codec.Bech32.DataPart
       Codec.Bech32.HumanReadableChar
       Codec.Bech32.HumanReadablePart
+      Data.BitSeq
       Data.Word5
     other-modules:
       Codec.Bech32.Utilities

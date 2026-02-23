@@ -14,7 +14,6 @@ module Codec.Bech32.HumanReadablePart
   ( HumanReadablePart
   , fromList
   , toList
-  , toWords
   , fromSymbol
   , fromText
   , toText
@@ -31,11 +30,9 @@ import Codec.Bech32.Utilities
   , maybeToEither
   )
 import Control.Monad ((>=>))
-import Data.Bits ((.>>.))
 import Data.Data (Proxy (Proxy))
 import Data.Foldable qualified as Foldable
 import Data.Foldable1 (Foldable1 (toNonEmpty))
-import Data.Functor ((<&>))
 import Data.Kind (Constraint)
 import Data.List.NonEmpty qualified as List (NonEmpty)
 import Data.List.NonEmpty qualified as List.NonEmpty
@@ -44,8 +41,6 @@ import Data.Sequence.NonEmpty qualified as NESeq
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Type.Bool (If, Not)
-import Data.Word5 (Word5)
-import Data.Word5 qualified as Word5
 import GHC.TypeError (Assert, TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits
@@ -94,13 +89,6 @@ fromList = HumanReadablePart . NESeq.fromList
 
 toList :: HumanReadablePart -> List.NonEmpty HumanReadableChar
 toList (HumanReadablePart cs) = toNonEmpty cs
-
-toWords :: HumanReadablePart -> [Word5]
-toWords (HumanReadablePart cs) = hiWords <> [0] <> loWords
-  where
-    hiWords = ordinals <&> Word5.fromIntegral . (.>>. 5)
-    loWords = ordinals <&> Word5.fromIntegral
-    ordinals = HumanReadableChar.toOrdinal <$> Foldable.toList cs
 
 -- | Constructs a 'HumanReadablePart' from a type-level textual symbol.
 --
