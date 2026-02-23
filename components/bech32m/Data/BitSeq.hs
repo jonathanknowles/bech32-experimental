@@ -3,13 +3,29 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.BitSeq where
+module Data.BitSeq
+  ( Bit (..)
+  , BitSeq
+  , all
+  , any
+  , length
+  , repeat
+  , singleton
+  , fromList
+  , fromChunks
+  , toList
+  , toChunksDeflate
+  , toChunksInflate
+  , repartitionDeflate
+  , repartitionInflate
+  )
+where
 
 import Data.Bits (Bits (setBit, testBit, zeroBits), FiniteBits (finiteBitSize))
-import Data.List qualified as List
-import Prelude hiding (take, repeat)
 import Data.Ix (Ix)
+import Data.List qualified as List
 import GHC.Generics (Generic)
+import Prelude hiding (all, any, length, repeat, take)
 
 -- TODO: Move to separate module and add Num + Bits instances.
 data Bit = B0 | B1
@@ -34,12 +50,11 @@ any f = List.any f . toList
 length :: BitSeq -> Int
 length = List.length . unBitSeq
 
--- the padding should be non-empty...
-repartitionPad :: (FiniteBits a, FiniteBits b) => BitSeq -> [a] -> [b]
-repartitionPad padBits = toChunksPad padBits . fromChunks
+repartitionInflate :: (FiniteBits a, FiniteBits b) => Bit -> [a] -> [b]
+repartitionInflate padding = toChunksInflate padding . fromChunks
 
-repartitionUnpad :: (FiniteBits a, FiniteBits b) => [a] -> (BitSeq, [b])
-repartitionUnpad = toChunksUnpad . fromChunks
+repartitionDeflate :: (FiniteBits a, FiniteBits b) => [a] -> (BitSeq, [b])
+repartitionDeflate = toChunksDeflate . fromChunks
 
 fromList :: [Bit] -> BitSeq
 fromList = BitSeq
@@ -53,22 +68,22 @@ fromChunk a = fromList [a `getBit` i | i <- [0 .. finiteBitSize a - 1]]
 fromChunks :: FiniteBits a => [a] -> BitSeq
 fromChunks = fromList . concatMap (toList . fromChunk)
 
-takeChunkPad :: forall a. FiniteBits a => BitSeq -> [Bit] -> (a, [Bit])
-takeChunkPad (BitSeq padding) bits = (chunk, rest)
+takeChunkInflate :: forall a. FiniteBits a => Bit -> BitSeq -> (a, BitSeq)
+takeChunkInflate padding (BitSeq bits) = (chunk, BitSeq rest)
   where
     w = finiteBitSize (zeroBits :: a)
     (prefix, rest) = List.splitAt w bits
-    padded = prefix ++ List.take (w - List.length prefix) (List.cycle padding)
+    padded = prefix ++ List.replicate (w - List.length prefix) padding
     chunk =
       List.foldl'
         (\acc (i, b) -> setBitFrom b i acc)
         zeroBits
         (zip [0 ..] padded)
 
-takeChunkUnpad :: forall a. FiniteBits a => [Bit] -> Maybe (a, [Bit])
-takeChunkUnpad bits
+takeChunkDeflate :: forall a. FiniteBits a => BitSeq -> Maybe (a, BitSeq)
+takeChunkDeflate (BitSeq bits)
   | List.length prefix < w = Nothing
-  | otherwise = Just (chunk, rest)
+  | otherwise = Just (chunk, BitSeq rest)
   where
     w = finiteBitSize (zeroBits :: a)
     (prefix, rest) = List.splitAt w bits
@@ -78,45 +93,22 @@ takeChunkUnpad bits
         zeroBits
         (zip [0 ..] prefix)
 
--- | Converts the given 'BitSeq' to a list of finitely-sized chunks.
---
--- The total number of bits in the output is guaranteed to be greater than or
--- equal to the number of bits in the input, with the excess bits provided by
--- the given pad 'Bit'.
---
--- The padding length is guaranteed to be less than the width of a chunk.
-toChunksPad :: forall a. FiniteBits a => BitSeq -> BitSeq -> [a]
-toChunksPad padding (BitSeq bits) = go bits
+toChunksInflate :: forall a. FiniteBits a => Bit -> BitSeq -> [a]
+toChunksInflate padding (BitSeq bits) = go bits
   where
     go [] = []
     go bs =
-      let (chunk, rest) = takeChunkPad padding bs
+      let (chunk, BitSeq rest) = takeChunkInflate padding (BitSeq bs)
       in chunk : go rest
 
--- | Converts the given 'BitSeq' to a list of finitely-sized chunks.
---
--- The total number of bits in the output is guaranteed to be less than or
--- equal to the number of bits in the input.
---
--- The result includes a 'BitSeq' of the remaining bits, whose length is
--- guaranteed to be less than the width of a chunk.
-toChunksUnpad :: forall a. FiniteBits a => BitSeq -> (BitSeq, [a])
-toChunksUnpad (BitSeq bits) = go bits []
+toChunksDeflate :: forall a. FiniteBits a => BitSeq -> (BitSeq, [a])
+toChunksDeflate (BitSeq bits) = go bits []
   where
     go [] acc = (BitSeq [], reverse acc)
     go bs acc =
-      case takeChunkUnpad bs of
-        Nothing -> (BitSeq bs, reverse acc) -- remaining bits < width
-        Just (chunk, rest) -> go rest (chunk : acc)
-
-drop :: Int -> BitSeq -> BitSeq
-drop n = BitSeq . List.drop n . unBitSeq
-
-take :: Int -> BitSeq -> BitSeq
-take n = BitSeq . List.take n . unBitSeq
-
-cons :: FiniteBits a => a -> BitSeq -> BitSeq
-cons a bs = fromChunk a <> bs
+      case takeChunkDeflate (BitSeq bs) of
+        Just (chunk, BitSeq rest) -> go rest (chunk : acc)
+        Nothing -> (BitSeq bs, reverse acc)
 
 --------------------------------------------------------------------------------
 -- Utilities
