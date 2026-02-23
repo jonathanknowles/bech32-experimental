@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -7,9 +8,12 @@ module Data.BitSeq where
 import Data.Bits (Bits (setBit, testBit, zeroBits), FiniteBits (finiteBitSize))
 import Data.List qualified as List
 import Prelude hiding (take, repeat)
+import Data.Ix (Ix)
+import GHC.Generics (Generic)
 
+-- TODO: Move to separate module and add Num + Bits instances.
 data Bit = B0 | B1
-  deriving (Eq, Ord, Read, Show)
+  deriving (Bounded, Enum, Eq, Generic, Ix, Ord, Read, Show)
 
 newtype BitSeq = BitSeq {unBitSeq :: [Bit]}
   deriving stock (Eq, Ord)
