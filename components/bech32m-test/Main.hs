@@ -38,6 +38,7 @@ import Test.QuickCheck.Classes
   , showReadLaws, bitsLaws
   )
 import Test.QuickCheck.Classes.Hspec (testLawsMany)
+import Data.Word (Word8)
 
 main :: IO ()
 main = hspec $ do
@@ -96,21 +97,24 @@ main = hspec $ do
         property
           prop_DataChar_toChar_fromCharMaybe
     describe "DataPart" $ do
-      it "prop_DataPart_append_fromWordList" $
+      it "prop_DataPart_append_fromWord5List" $
         property
-          prop_DataPart_append_fromWordList
-      it "prop_DataPart_append_toWordList" $
+          prop_DataPart_append_fromWord5List
+      it "prop_DataPart_append_toWord5List" $
         property
-          prop_DataPart_append_toWordList
+          prop_DataPart_append_toWord5List
       it "prop_DataPart_toText_fromText" $
         property
           prop_DataPart_toText_fromText
-      it "prop_DataPart_toWordList_fromWordList" $
+      it "prop_DataPart_toWord5List_fromWord5List" $
         property
-          prop_DataPart_toWordList_fromWordList
-      it "prop_DataPart_fromWordList_toWordList" $
+          prop_DataPart_toWord5List_fromWord5List
+      it "prop_DataPart_fromWord5List_toWord5List" $
         property
-          prop_DataPart_fromWordList_toWordList
+          prop_DataPart_fromWord5List_toWord5List
+      it "prop_DataPart_fromWord8List_toWord8List" $
+        property
+          prop_DataPart_fromWord8List_toWord8List
     describe "HumanReadableChar" $ do
       it "prop_HumanReadableChar_toChar_fromCharMaybe" $
         property
@@ -141,8 +145,8 @@ instance Arbitrary DataChar where
   shrink = shrinkBoundedEnum
 
 instance Arbitrary DataPart where
-  arbitrary = DataPart.fromWordList <$> arbitrary
-  shrink = shrinkMap DataPart.fromWordList DataPart.toWordList
+  arbitrary = DataPart.fromWord5List <$> arbitrary
+  shrink = shrinkMap DataPart.fromWord5List DataPart.toWord5List
 
 instance Arbitrary HumanReadableChar where
   arbitrary = arbitraryBoundedEnum
@@ -180,27 +184,31 @@ prop_DataChar_toChar_fromCharMaybe c =
 -- Properties for DataPart
 --------------------------------------------------------------------------------
 
-prop_DataPart_append_fromWordList :: [Word5] -> [Word5] -> Property
-prop_DataPart_append_fromWordList ps qs =
-  DataPart.fromWordList (ps <> qs)
-    === (DataPart.fromWordList ps <> DataPart.fromWordList qs)
+prop_DataPart_append_fromWord5List :: [Word5] -> [Word5] -> Property
+prop_DataPart_append_fromWord5List ps qs =
+  DataPart.fromWord5List (ps <> qs)
+    === (DataPart.fromWord5List ps <> DataPart.fromWord5List qs)
 
-prop_DataPart_append_toWordList :: DataPart -> DataPart -> Property
-prop_DataPart_append_toWordList p q =
-  DataPart.toWordList (p <> q)
-    === (DataPart.toWordList p <> DataPart.toWordList q)
+prop_DataPart_append_toWord5List :: DataPart -> DataPart -> Property
+prop_DataPart_append_toWord5List p q =
+  DataPart.toWord5List (p <> q)
+    === (DataPart.toWord5List p <> DataPart.toWord5List q)
 
 prop_DataPart_toText_fromText :: DataPart -> Property
 prop_DataPart_toText_fromText d =
   DataPart.fromText (DataPart.toText d) === Right d
 
-prop_DataPart_toWordList_fromWordList :: DataPart -> Property
-prop_DataPart_toWordList_fromWordList d =
-  DataPart.fromWordList (DataPart.toWordList d) === d
+prop_DataPart_toWord5List_fromWord5List :: DataPart -> Property
+prop_DataPart_toWord5List_fromWord5List d =
+  DataPart.fromWord5List (DataPart.toWord5List d) === d
 
-prop_DataPart_fromWordList_toWordList :: [Word5] -> Property
-prop_DataPart_fromWordList_toWordList ws =
-  DataPart.toWordList (DataPart.fromWordList ws) === ws
+prop_DataPart_fromWord5List_toWord5List :: [Word5] -> Property
+prop_DataPart_fromWord5List_toWord5List ws =
+  DataPart.toWord5List (DataPart.fromWord5List ws) === ws
+
+prop_DataPart_fromWord8List_toWord8List :: [Word8] -> Property
+prop_DataPart_fromWord8List_toWord8List ws =
+  DataPart.toWord8List (DataPart.fromWord8List ws) === Just ws
 
 --------------------------------------------------------------------------------
 -- Properties for HumanReadableChar

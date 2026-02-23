@@ -14,6 +14,12 @@ newtype BitSeq = BitSeq {unBitSeq :: [Bit]}
   deriving stock (Eq, Ord)
   deriving newtype (Monoid, Read, Semigroup, Show)
 
+all :: (Bit -> Bool) -> BitSeq -> Bool
+all f = List.all f . toList
+
+any :: (Bit -> Bool) -> BitSeq -> Bool
+any f = List.any f . toList
+
 length :: BitSeq -> Int
 length = List.length . unBitSeq
 

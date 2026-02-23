@@ -12,8 +12,10 @@
 
 module Codec.Bech32.DataPart
   ( DataPart
-  , fromWordList
-  , toWordList
+  , fromWord5List
+  , fromWord8List
+  , toWord5List
+  , toWord8List
   , fromSymbol
   , fromText
   , toText
@@ -23,6 +25,8 @@ where
 
 import Codec.Bech32.DataChar qualified as DataChar
 import Codec.Bech32.Utilities (InvalidCharError, fromRight, maybeToEither)
+import Data.BitSeq (Bit (B0, B1))
+import Data.BitSeq qualified as BitSeq
 import Data.Foldable qualified as Foldable
 import Data.Kind (Constraint)
 import Data.Proxy (Proxy (Proxy))
@@ -31,6 +35,7 @@ import Data.Sequence qualified as Seq
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Type.Bool (If)
+import Data.Word (Word8)
 import Data.Word5 (Word5)
 import GHC.TypeLits
   ( KnownSymbol
@@ -68,13 +73,23 @@ length (DataPart cs) = Seq.length cs
 
 -- | Constructs a 'DataPart' from a list of words.
 --
--- >>> fromWordList [0 .. 31]
+-- >>> fromWord5List [0 .. 31]
 -- fromSymbol @"QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L"
-fromWordList :: [Word5] -> DataPart
-fromWordList words = DataPart (Seq.fromList words)
+fromWord5List :: [Word5] -> DataPart
+fromWord5List words = DataPart (Seq.fromList words)
 
-toWordList :: DataPart -> [Word5]
-toWordList (DataPart words) = Foldable.toList words
+toWord5List :: DataPart -> [Word5]
+toWord5List (DataPart words) = Foldable.toList words
+
+fromWord8List :: [Word8] -> DataPart
+fromWord8List = fromWord5List . BitSeq.repartitionPad B0
+
+toWord8List :: DataPart -> Maybe [Word8]
+toWord8List ws
+  | BitSeq.any (== B1) remainder = Nothing
+  | otherwise = Just result
+  where
+    (result, remainder) = BitSeq.repartitionUnpad (toWord5List ws)
 
 -- | Constructs a 'DataPart' from a type-level textual symbol.
 --
@@ -141,7 +156,7 @@ data ParseError
   deriving (Eq, Show)
 
 fromText :: Text -> Either ParseError DataPart
-fromText = fmap fromWordList . traverse parseChar . zip [0 ..] . Text.unpack
+fromText = fmap fromWord5List . traverse parseChar . zip [0 ..] . Text.unpack
   where
     parseChar (n, c) =
       maybeToEither
