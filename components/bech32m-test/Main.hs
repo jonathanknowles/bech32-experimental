@@ -3,14 +3,14 @@
 
 module Main (main) where
 
-import Codec.Bech32.DataChar (DataChar)
-import Codec.Bech32.DataChar qualified as DataChar
-import Codec.Bech32.DataPart (DataPart)
-import Codec.Bech32.DataPart qualified as DataPart
-import Codec.Bech32.Prefix.Char (PrefixChar)
-import Codec.Bech32.Prefix.Char qualified as Prefix.Char
+import Codec.Bech32.Suffix.Payload (Payload)
+import Codec.Bech32.Suffix.Payload qualified as Payload
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
+import Codec.Bech32.Prefix.Char (PrefixChar)
+import Codec.Bech32.Prefix.Char qualified as PrefixChar
+import Codec.Bech32.Suffix.Char (SuffixChar)
+import Codec.Bech32.Suffix.Char qualified as SuffixChar
 import Data.Bit (Bit)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as List (NonEmpty)
@@ -55,7 +55,7 @@ main = hspec $ do
       , showLaws
       , showReadLaws
       ]
-    testLawsMany @DataChar
+    testLawsMany @SuffixChar
       [ boundedEnumLaws
       , eqLaws
       , ixLaws
@@ -63,7 +63,7 @@ main = hspec $ do
       , showLaws
       , showReadLaws
       ]
-    testLawsMany @DataPart
+    testLawsMany @Payload
       [ eqLaws
       , monoidLaws
       , ordLaws
@@ -98,35 +98,35 @@ main = hspec $ do
       , showReadLaws
       ]
   describe "Properties" $ do
-    describe "DataChar" $ do
-      it "prop_DataChar_fromWord5_toWord5" $
+    describe "SuffixChar" $ do
+      it "prop_SuffixChar_fromWord5_toWord5" $
         property
-          prop_DataChar_fromWord5_toWord5
-      it "prop_DataChar_toWord5_fromWord5" $
+          prop_SuffixChar_fromWord5_toWord5
+      it "prop_SuffixChar_toWord5_fromWord5" $
         property
-          prop_DataChar_toWord5_fromWord5
-      it "prop_DataChar_toChar_fromCharMaybe" $
+          prop_SuffixChar_toWord5_fromWord5
+      it "prop_SuffixChar_toChar_fromCharMaybe" $
         property
-          prop_DataChar_toChar_fromCharMaybe
-    describe "DataPart" $ do
-      it "prop_DataPart_append_fromWord5List" $
+          prop_SuffixChar_toChar_fromCharMaybe
+    describe "Payload" $ do
+      it "prop_Payload_append_fromWord5List" $
         property
-          prop_DataPart_append_fromWord5List
-      it "prop_DataPart_append_toWord5List" $
+          prop_Payload_append_fromWord5List
+      it "prop_Payload_append_toWord5List" $
         property
-          prop_DataPart_append_toWord5List
-      it "prop_DataPart_toText_fromText" $
+          prop_Payload_append_toWord5List
+      it "prop_Payload_toText_fromText" $
         property
-          prop_DataPart_toText_fromText
-      it "prop_DataPart_toWord5List_fromWord5List" $
+          prop_Payload_toText_fromText
+      it "prop_Payload_toWord5List_fromWord5List" $
         property
-          prop_DataPart_toWord5List_fromWord5List
-      it "prop_DataPart_fromWord5List_toWord5List" $
+          prop_Payload_toWord5List_fromWord5List
+      it "prop_Payload_fromWord5List_toWord5List" $
         property
-          prop_DataPart_fromWord5List_toWord5List
-      it "prop_DataPart_fromWord8List_toWord8List" $
+          prop_Payload_fromWord5List_toWord5List
+      it "prop_Payload_fromWord8List_toWord8List" $
         property
-          prop_DataPart_fromWord8List_toWord8List
+          prop_Payload_fromWord8List_toWord8List
     describe "PrefixChar" $ do
       it "prop_PrefixChar_toChar_fromCharMaybe" $
         property
@@ -156,13 +156,13 @@ instance Arbitrary Bit where
   arbitrary = arbitraryBoundedEnum
   shrink = shrinkBoundedEnum
 
-instance Arbitrary DataChar where
+instance Arbitrary SuffixChar where
   arbitrary = arbitraryBoundedEnum
   shrink = shrinkBoundedEnum
 
-instance Arbitrary DataPart where
-  arbitrary = DataPart.fromWord5List <$> arbitrary
-  shrink = shrinkMap DataPart.fromWord5List DataPart.toWord5List
+instance Arbitrary Payload where
+  arbitrary = Payload.fromWord5List <$> arbitrary
+  shrink = shrinkMap Payload.fromWord5List Payload.toWord5List
 
 instance Arbitrary PrefixChar where
   arbitrary = arbitraryBoundedEnum
@@ -181,50 +181,50 @@ instance Arbitrary a => Arbitrary (List.NonEmpty a) where
   shrink (a :| as) = uncurry (:|) <$> shrink (a, as)
 
 --------------------------------------------------------------------------------
--- Properties for DataChar
+-- Properties for SuffixChar
 --------------------------------------------------------------------------------
 
-prop_DataChar_fromWord5_toWord5 :: Word5 -> Property
-prop_DataChar_fromWord5_toWord5 w =
-  DataChar.toWord5 (DataChar.fromWord5 w) === w
+prop_SuffixChar_fromWord5_toWord5 :: Word5 -> Property
+prop_SuffixChar_fromWord5_toWord5 w =
+  SuffixChar.toWord5 (SuffixChar.fromWord5 w) === w
 
-prop_DataChar_toWord5_fromWord5 :: DataChar -> Property
-prop_DataChar_toWord5_fromWord5 c =
-  DataChar.fromWord5 (DataChar.toWord5 c) === c
+prop_SuffixChar_toWord5_fromWord5 :: SuffixChar -> Property
+prop_SuffixChar_toWord5_fromWord5 c =
+  SuffixChar.fromWord5 (SuffixChar.toWord5 c) === c
 
-prop_DataChar_toChar_fromCharMaybe :: DataChar -> Property
-prop_DataChar_toChar_fromCharMaybe c =
-  DataChar.fromCharMaybe (DataChar.toChar c) === Just c
+prop_SuffixChar_toChar_fromCharMaybe :: SuffixChar -> Property
+prop_SuffixChar_toChar_fromCharMaybe c =
+  SuffixChar.fromCharMaybe (SuffixChar.toChar c) === Just c
 
 --------------------------------------------------------------------------------
--- Properties for DataPart
+-- Properties for Payload
 --------------------------------------------------------------------------------
 
-prop_DataPart_append_fromWord5List :: [Word5] -> [Word5] -> Property
-prop_DataPart_append_fromWord5List ps qs =
-  DataPart.fromWord5List (ps <> qs)
-    === (DataPart.fromWord5List ps <> DataPart.fromWord5List qs)
+prop_Payload_append_fromWord5List :: [Word5] -> [Word5] -> Property
+prop_Payload_append_fromWord5List ps qs =
+  Payload.fromWord5List (ps <> qs)
+    === (Payload.fromWord5List ps <> Payload.fromWord5List qs)
 
-prop_DataPart_append_toWord5List :: DataPart -> DataPart -> Property
-prop_DataPart_append_toWord5List p q =
-  DataPart.toWord5List (p <> q)
-    === (DataPart.toWord5List p <> DataPart.toWord5List q)
+prop_Payload_append_toWord5List :: Payload -> Payload -> Property
+prop_Payload_append_toWord5List p q =
+  Payload.toWord5List (p <> q)
+    === (Payload.toWord5List p <> Payload.toWord5List q)
 
-prop_DataPart_toText_fromText :: DataPart -> Property
-prop_DataPart_toText_fromText d =
-  DataPart.fromText (DataPart.toText d) === Right d
+prop_Payload_toText_fromText :: Payload -> Property
+prop_Payload_toText_fromText d =
+  Payload.fromText (Payload.toText d) === Right d
 
-prop_DataPart_toWord5List_fromWord5List :: DataPart -> Property
-prop_DataPart_toWord5List_fromWord5List d =
-  DataPart.fromWord5List (DataPart.toWord5List d) === d
+prop_Payload_toWord5List_fromWord5List :: Payload -> Property
+prop_Payload_toWord5List_fromWord5List d =
+  Payload.fromWord5List (Payload.toWord5List d) === d
 
-prop_DataPart_fromWord5List_toWord5List :: [Word5] -> Property
-prop_DataPart_fromWord5List_toWord5List ws =
-  DataPart.toWord5List (DataPart.fromWord5List ws) === ws
+prop_Payload_fromWord5List_toWord5List :: [Word5] -> Property
+prop_Payload_fromWord5List_toWord5List ws =
+  Payload.toWord5List (Payload.fromWord5List ws) === ws
 
-prop_DataPart_fromWord8List_toWord8List :: [Word8] -> Property
-prop_DataPart_fromWord8List_toWord8List ws =
-  DataPart.toWord8List (DataPart.fromWord8List ws) === Just ws
+prop_Payload_fromWord8List_toWord8List :: [Word8] -> Property
+prop_Payload_fromWord8List_toWord8List ws =
+  Payload.toWord8List (Payload.fromWord8List ws) === Just ws
 
 --------------------------------------------------------------------------------
 -- Properties for PrefixChar

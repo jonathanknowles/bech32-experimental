@@ -5,11 +5,11 @@ module Codec.Bech32 where
 
 import Codec.Bech32.Checksum (Checksum (Checksum))
 import Codec.Bech32.Checksum qualified as Checksum
-import Codec.Bech32.DataPart (DataPart)
-import Codec.Bech32.DataPart qualified as DataPart
+import Codec.Bech32.Suffix.Payload (Payload)
+import Codec.Bech32.Suffix.Payload qualified as Payload
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
-import Codec.Bech32.Prefix.Char qualified as Prefix.Char
+import Codec.Bech32.Prefix.Char qualified as PrefixChar
 import Data.Bits (Bits (shiftL, shiftR, testBit, xor, (.&.)), (.>>.))
 import Data.Foldable qualified as Foldable
 import Data.Functor ((<&>))
@@ -21,15 +21,15 @@ import Data.Word5 qualified as Word5
 
 -- TODO:
 --
--- DataPart should really be DataPayload (or similar) because the DataPart
+-- Payload should really be DataPayload (or similar) because the Payload
 -- is actually the combination of the DataPayload and the Checksum.
 --
 -- Prefix
 -- PrefixChar
 --
 -- DataPayload
--- DataPart -- this can be a combination of DataPayload and Checksum
--- DataChar
+-- Payload -- this can be a combination of DataPayload and Checksum
+-- SuffixChar
 --
 --
 -- How about:
@@ -53,7 +53,7 @@ humanReadablePartToWords (Prefix.toList -> cs) =
   where
     hiWords = ordinals <&> Word5.fromIntegral . (.>>. 5)
     loWords = ordinals <&> Word5.fromIntegral
-    ordinals = Prefix.Char.toOrdinal <$> Foldable.toList cs
+    ordinals = PrefixChar.toOrdinal <$> Foldable.toList cs
 
 polymod :: [Word5] -> Word32
 polymod = foldl' step 1
@@ -71,9 +71,9 @@ polymod = foldl' step 1
            c'
            (zip [0 .. 4] generators)
 
-computeChecksum :: Prefix -> DataPart -> Checksum
+computeChecksum :: Prefix -> Payload -> Checksum
 computeChecksum hrp dp =
-  let values = humanReadablePartToWords hrp <> DataPart.toWord5List dp
+  let values = humanReadablePartToWords hrp <> Payload.toWord5List dp
       remainder = polymod values `xor` 1 -- XOR 1 for Bech32 final constant
   in Checksum
        (Word5.fromIntegral $ (remainder `shiftR` 25) .&. 0x1f)
@@ -83,11 +83,11 @@ computeChecksum hrp dp =
        (Word5.fromIntegral $ (remainder `shiftR` 5) .&. 0x1f)
        (Word5.fromIntegral $ remainder .&. 0x1f)
 
-encode :: Prefix -> DataPart -> Text
+encode :: Prefix -> Payload -> Text
 encode hrp dp =
   Prefix.toText hrp
     <> "1"
-    <> DataPart.toText dp
+    <> Payload.toText dp
     <> Checksum.toText cs
   where
     cs = computeChecksum hrp dp

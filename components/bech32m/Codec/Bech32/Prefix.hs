@@ -22,7 +22,7 @@ module Codec.Bech32.Prefix
 where
 
 import Codec.Bech32.Prefix.Char (PrefixChar)
-import Codec.Bech32.Prefix.Char qualified as Prefix.Char
+import Codec.Bech32.Prefix.Char qualified as PrefixChar
 import Codec.Bech32.Utilities
   ( InvalidCharError
   , SymbolEmpty
@@ -80,7 +80,7 @@ length (Prefix cs) = NESeq.length cs
 
 -- | Constructs a 'Prefix' from a list of characters.
 --
--- >>> import Codec.Bech32.Prefix.Char (fromChar)
+-- >>> import Codec.Bech32.Prefix.(fromChar)
 --
 -- >>> fromList [fromChar @'A', fromChar @'B', fromChar @'C', fromChar @'D']
 -- fromSymbol @"ABCD"
@@ -159,7 +159,7 @@ fromText = assertCharsValid >=> assertNotEmpty
         parseChar (n, c) =
           maybeToEither
             (ParseErrorInvalidChar n)
-            (Prefix.Char.fromCharMaybe c)
+            (PrefixChar.fromCharMaybe c)
 
     assertNotEmpty :: [PrefixChar] -> Either ParseError Prefix
     assertNotEmpty =
@@ -183,10 +183,10 @@ type family
   SymbolCharInvalidInner _ Nothing _ = Nothing
   SymbolCharInvalidInner s0 (Just '(c, s)) n =
     If
-      (Prefix.Char.ValidChar c)
+      (PrefixChar.ValidChar c)
       (SymbolCharInvalidInner s0 (UnconsSymbol s) (n + 1))
       (Just '(s0, n))
 
 toText :: Prefix -> Text
 toText (Prefix cs) =
-  Text.pack $ Prefix.Char.toChar <$> Foldable.toList cs
+  Text.pack $ PrefixChar.toChar <$> Foldable.toList cs

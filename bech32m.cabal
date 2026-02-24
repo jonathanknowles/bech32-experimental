@@ -33,11 +33,11 @@ library
     exposed-modules:
       Codec.Bech32
       Codec.Bech32.Checksum
-      Codec.Bech32.DataChar
-      Codec.Bech32.DataPart
-      Codec.Bech32.Prefix.Char
+      Codec.Bech32.Suffix.Payload
       Codec.Bech32.Prefix
+      Codec.Bech32.Prefix.Char
       Codec.Bech32.Suffix
+      Codec.Bech32.Suffix.Char
       Data.Bit
       Data.BitSeq
       Data.Word5

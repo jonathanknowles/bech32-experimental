@@ -10,8 +10,8 @@
 
 {- HLINT ignore "Use newtype instead of data" -}
 
-module Codec.Bech32.DataPart
-  ( DataPart
+module Codec.Bech32.Suffix.Payload
+  ( Payload
   , fromWord5List
   , fromWord8List
   , toWord5List
@@ -23,7 +23,7 @@ module Codec.Bech32.DataPart
   )
 where
 
-import Codec.Bech32.DataChar qualified as DataChar
+import Codec.Bech32.Suffix.Char qualified as SuffixChar
 import Codec.Bech32.Utilities (InvalidCharError, fromRight, maybeToEither)
 import Data.Bifunctor (Bifunctor (first))
 import Data.Bit (Bit (B0, B1))
@@ -55,45 +55,45 @@ import Prelude hiding (length, words)
 -- >>> :set -XDataKinds
 -- >>> :set -XTypeApplications
 
-newtype DataPart = DataPart (Seq Word5)
+newtype Payload = Payload (Seq Word5)
   deriving stock (Eq, Ord)
   deriving newtype (Monoid, Semigroup)
 
-instance Read DataPart where
+instance Read Payload where
   readPrec = parens $ prec 10 $ do
     Ident "fromSymbol" <- lexP
     Punc "@" <- lexP
     unsafeFromText <$> readPrec
 
-instance Show DataPart where
-  showsPrec d hrp =
+instance Show Payload where
+  showsPrec d p =
     showParen (d > 10) $
-      showString "fromSymbol @" . shows (toText hrp)
+      showString "fromSymbol @" . shows (toText p)
 
-length :: DataPart -> Int
-length (DataPart cs) = Seq.length cs
+length :: Payload -> Int
+length (Payload cs) = Seq.length cs
 
--- | Constructs a 'DataPart' from a list of words.
+-- | Constructs a 'Payload' from a list of words.
 --
 -- >>> fromWord5List [0 .. 31]
 -- fromSymbol @"QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L"
-fromWord5List :: [Word5] -> DataPart
-fromWord5List words = DataPart (Seq.fromList words)
+fromWord5List :: [Word5] -> Payload
+fromWord5List words = Payload (Seq.fromList words)
 
-toWord5List :: DataPart -> [Word5]
-toWord5List (DataPart words) = Foldable.toList words
+toWord5List :: Payload -> [Word5]
+toWord5List (Payload words) = Foldable.toList words
 
-fromWord8List :: [Word8] -> DataPart
+fromWord8List :: [Word8] -> Payload
 fromWord8List = fromWord5List . resliceInflate B0
 
-toWord8List :: DataPart -> Maybe [Word8]
+toWord8List :: Payload -> Maybe [Word8]
 toWord8List ws
   | B1 `elem` remainder = Nothing
   | otherwise = Just result
   where
     (remainder, result) = resliceDeflate (toWord5List ws)
 
--- | Constructs a 'DataPart' from a type-level textual symbol.
+-- | Constructs a 'Payload' from a type-level textual symbol.
 --
 -- >>> fromSymbol @""
 -- fromSymbol @""
@@ -108,12 +108,12 @@ toWord8List ws
 --       Invalid character at indicated position.
 --       Expected a character from the set [023456789ACDEFGHJKLMNPQRSTUVWXYZ].
 -- ...
-fromSymbol :: forall s. KnownValidSymbol s => DataPart
+fromSymbol :: forall s. KnownValidSymbol s => Payload
 fromSymbol =
   fromRight handleFailure $ fromText $ Text.pack $ symbolVal $ Proxy @s
   where
     handleFailure e =
-      error $ "DataPart.fromSymbol: unexpected failure:" <> show e
+      error $ "Payload.fromSymbol: unexpected failure:" <> show e
 
 type family KnownValidSymbol (s :: Symbol) :: Constraint where
   KnownValidSymbol s =
@@ -137,7 +137,7 @@ type family
   SymbolCharInvalidInner _ Nothing _ = Nothing
   SymbolCharInvalidInner s0 (Just '(c, s)) n =
     If
-      (DataChar.ValidChar c)
+      (SuffixChar.ValidChar c)
       (SymbolCharInvalidInner s0 (UnconsSymbol s) (n + 1))
       (Just '(s0, n))
 
@@ -157,25 +157,25 @@ data ParseError
   = ParseErrorInvalidChar Natural
   deriving (Eq, Show)
 
-fromText :: Text -> Either ParseError DataPart
+fromText :: Text -> Either ParseError Payload
 fromText = fmap fromWord5List . traverse parseChar . zip [0 ..] . Text.unpack
   where
     parseChar (n, c) =
       maybeToEither
         (ParseErrorInvalidChar n)
-        (DataChar.toWord5 <$> DataChar.fromCharMaybe c)
+        (SuffixChar.toWord5 <$> SuffixChar.fromCharMaybe c)
 
-unsafeFromText :: Text -> DataPart
+unsafeFromText :: Text -> Payload
 unsafeFromText = fromRight onFailure . fromText
   where
     onFailure = error "unsafeFromText"
 
-toText :: DataPart -> Text
-toText (DataPart words) =
+toText :: Payload -> Text
+toText (Payload words) =
   Text.pack $ word5ToChar <$> Foldable.toList words
   where
     word5ToChar :: Word5 -> Char
-    word5ToChar = DataChar.toChar . DataChar.fromWord5
+    word5ToChar = SuffixChar.toChar . SuffixChar.fromWord5
 
 --------------------------------------------------------------------------------
 -- Utilities
