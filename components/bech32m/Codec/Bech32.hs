@@ -4,11 +4,12 @@
 module Codec.Bech32 where
 
 import Codec.Bech32.Checksum (Checksum (Checksum))
+import Codec.Bech32.Checksum qualified as Checksum
 import Codec.Bech32.DataPart (DataPart)
 import Codec.Bech32.DataPart qualified as DataPart
-import Codec.Bech32.Prefix.Char qualified as Prefix.Char
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
+import Codec.Bech32.Prefix.Char qualified as Prefix.Char
 import Data.Bits (Bits (shiftL, shiftR, testBit, xor, (.&.)), (.>>.))
 import Data.Foldable qualified as Foldable
 import Data.Functor ((<&>))
@@ -17,7 +18,6 @@ import Data.Text qualified as Text
 import Data.Word (Word32)
 import Data.Word5 (Word5)
 import Data.Word5 qualified as Word5
-import qualified Codec.Bech32.Checksum as Checksum
 
 -- TODO:
 --
