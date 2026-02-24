@@ -36,7 +36,8 @@ library
       Codec.Bech32.DataChar
       Codec.Bech32.DataPart
       Codec.Bech32.HumanReadableChar
-      Codec.Bech32.HumanReadablePart
+      Codec.Bech32.Prefix
+      Codec.Bech32.Suffix
       Data.Bit
       Data.BitSeq
       Data.Word5

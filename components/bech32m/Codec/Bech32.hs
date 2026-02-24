@@ -7,8 +7,8 @@ import Codec.Bech32.Checksum (Checksum (Checksum))
 import Codec.Bech32.DataPart (DataPart)
 import Codec.Bech32.DataPart qualified as DataPart
 import Codec.Bech32.HumanReadableChar qualified as HumanReadableChar
-import Codec.Bech32.HumanReadablePart (HumanReadablePart)
-import Codec.Bech32.HumanReadablePart qualified as HumanReadablePart
+import Codec.Bech32.Prefix (Prefix)
+import Codec.Bech32.Prefix qualified as Prefix
 import Data.Bits (Bits (shiftL, shiftR, testBit, xor, (.&.)), (.>>.))
 import Data.Foldable qualified as Foldable
 import Data.Functor ((<&>))
@@ -26,9 +26,15 @@ import qualified Codec.Bech32.Checksum as Checksum
 --
 -- Prefix
 -- PrefixChar
+--
 -- DataPayload
 -- DataPart -- this can be a combination of DataPayload and Checksum
 -- DataChar
+--
+--
+-- How about:
+-- Suffix
+-- SuffixChar
 
 separatorChar :: Char
 separatorChar = '1'
@@ -41,8 +47,8 @@ splitOnSeparator t =
     (prefixWith1, suffix) ->
       Just (Text.init prefixWith1, suffix)
 
-humanReadablePartToWords :: HumanReadablePart -> [Word5]
-humanReadablePartToWords (HumanReadablePart.toList -> cs) =
+humanReadablePartToWords :: Prefix -> [Word5]
+humanReadablePartToWords (Prefix.toList -> cs) =
   hiWords <> [0] <> loWords
   where
     hiWords = ordinals <&> Word5.fromIntegral . (.>>. 5)
@@ -65,7 +71,7 @@ polymod = foldl' step 1
            c'
            (zip [0 .. 4] generators)
 
-computeChecksum :: HumanReadablePart -> DataPart -> Checksum
+computeChecksum :: Prefix -> DataPart -> Checksum
 computeChecksum hrp dp =
   let values = humanReadablePartToWords hrp <> DataPart.toWord5List dp
       remainder = polymod values `xor` 1 -- XOR 1 for Bech32 final constant
@@ -77,9 +83,9 @@ computeChecksum hrp dp =
        (Word5.fromIntegral $ (remainder `shiftR` 5) .&. 0x1f)
        (Word5.fromIntegral $ remainder .&. 0x1f)
 
-encode :: HumanReadablePart -> DataPart -> Text
+encode :: Prefix -> DataPart -> Text
 encode hrp dp =
-  HumanReadablePart.toText hrp
+  Prefix.toText hrp
     <> "1"
     <> DataPart.toText dp
     <> Checksum.toText cs

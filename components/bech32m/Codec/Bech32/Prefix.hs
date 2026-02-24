@@ -10,8 +10,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Codec.Bech32.HumanReadablePart
-  ( HumanReadablePart
+module Codec.Bech32.Prefix
+  ( Prefix
   , fromList
   , toList
   , fromSymbol
@@ -61,36 +61,36 @@ import Prelude hiding (length)
 -- >>> :set -XTypeApplications
 -- >>> import Data.List.NonEmpty (NonEmpty ((:|)))
 
-newtype HumanReadablePart = HumanReadablePart (NESeq HumanReadableChar)
+newtype Prefix = Prefix (NESeq HumanReadableChar)
   deriving newtype (Eq, Ord, Semigroup)
 
-instance Read HumanReadablePart where
+instance Read Prefix where
   readPrec = parens $ prec 10 $ do
     Ident "fromSymbol" <- lexP
     Punc "@" <- lexP
     unsafeFromText <$> readPrec
 
-instance Show HumanReadablePart where
+instance Show Prefix where
   showsPrec d hrp =
     showParen (d > 10) $
       showString "fromSymbol @" . shows (toText hrp)
 
-length :: HumanReadablePart -> Int
-length (HumanReadablePart cs) = NESeq.length cs
+length :: Prefix -> Int
+length (Prefix cs) = NESeq.length cs
 
--- | Constructs a 'HumanReadablePart' from a list of characters.
+-- | Constructs a 'Prefix' from a list of characters.
 --
 -- >>> import Codec.Bech32.HumanReadableChar (fromChar)
 --
 -- >>> fromList [fromChar @'A', fromChar @'B', fromChar @'C', fromChar @'D']
 -- fromSymbol @"ABCD"
-fromList :: List.NonEmpty HumanReadableChar -> HumanReadablePart
-fromList = HumanReadablePart . NESeq.fromList
+fromList :: List.NonEmpty HumanReadableChar -> Prefix
+fromList = Prefix . NESeq.fromList
 
-toList :: HumanReadablePart -> List.NonEmpty HumanReadableChar
-toList (HumanReadablePart cs) = toNonEmpty cs
+toList :: Prefix -> List.NonEmpty HumanReadableChar
+toList (Prefix cs) = toNonEmpty cs
 
--- | Constructs a 'HumanReadablePart' from a type-level textual symbol.
+-- | Constructs a 'Prefix' from a type-level textual symbol.
 --
 -- >>> fromSymbol @"AAAA"
 -- fromSymbol @"AAAA"
@@ -107,12 +107,12 @@ toList (HumanReadablePart cs) = toNonEmpty cs
 --       Invalid character at indicated position.
 --       Expected a character from the range: ['!' .. '~'].
 -- ...
-fromSymbol :: forall s. KnownValidSymbol s => HumanReadablePart
+fromSymbol :: forall s. KnownValidSymbol s => Prefix
 fromSymbol =
   fromRight handleFailure $ fromText $ Text.pack $ symbolVal $ Proxy @s
   where
     handleFailure e =
-      error $ "HumanReadablePart.fromSymbol: unexpected failure:" <> show e
+      error $ "Prefix.fromSymbol: unexpected failure:" <> show e
 
 type family KnownValidSymbol (s :: Symbol) :: Constraint where
   KnownValidSymbol s =
@@ -150,7 +150,7 @@ data ParseError
   | ParseErrorInvalidChar Natural
   deriving (Eq, Show)
 
-fromText :: Text -> Either ParseError HumanReadablePart
+fromText :: Text -> Either ParseError Prefix
 fromText = assertCharsValid >=> assertNotEmpty
   where
     assertCharsValid :: Text -> Either ParseError [HumanReadableChar]
@@ -161,11 +161,11 @@ fromText = assertCharsValid >=> assertNotEmpty
             (ParseErrorInvalidChar n)
             (HumanReadableChar.fromCharMaybe c)
 
-    assertNotEmpty :: [HumanReadableChar] -> Either ParseError HumanReadablePart
+    assertNotEmpty :: [HumanReadableChar] -> Either ParseError Prefix
     assertNotEmpty =
       maybeToEither ParseErrorEmpty . fmap fromList . List.NonEmpty.nonEmpty
 
-unsafeFromText :: Text -> HumanReadablePart
+unsafeFromText :: Text -> Prefix
 unsafeFromText = fromRight onFailure . fromText
   where
     onFailure = error "unsafeFromText"
@@ -187,6 +187,6 @@ type family
       (SymbolCharInvalidInner s0 (UnconsSymbol s) (n + 1))
       (Just '(s0, n))
 
-toText :: HumanReadablePart -> Text
-toText (HumanReadablePart cs) =
+toText :: Prefix -> Text
+toText (Prefix cs) =
   Text.pack $ HumanReadableChar.toChar <$> Foldable.toList cs

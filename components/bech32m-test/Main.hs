@@ -9,8 +9,8 @@ import Codec.Bech32.DataPart (DataPart)
 import Codec.Bech32.DataPart qualified as DataPart
 import Codec.Bech32.HumanReadableChar (HumanReadableChar)
 import Codec.Bech32.HumanReadableChar qualified as HumanReadableChar
-import Codec.Bech32.HumanReadablePart (HumanReadablePart)
-import Codec.Bech32.HumanReadablePart qualified as HumanReadablePart
+import Codec.Bech32.Prefix (Prefix)
+import Codec.Bech32.Prefix qualified as Prefix
 import Data.Bit (Bit)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as List (NonEmpty)
@@ -80,7 +80,7 @@ main = hspec $ do
       , showLaws
       , showReadLaws
       ]
-    testLawsMany @HumanReadablePart
+    testLawsMany @Prefix
       [ eqLaws
       , ordLaws
       , semigroupLaws
@@ -131,22 +131,22 @@ main = hspec $ do
       it "prop_HumanReadableChar_toChar_fromCharMaybe" $
         property
           prop_HumanReadableChar_toChar_fromCharMaybe
-    describe "HumanReadablePart" $ do
-      it "prop_HumanReadablePart_append_fromList" $
+    describe "Prefix" $ do
+      it "prop_Prefix_append_fromList" $
         property
-          prop_HumanReadablePart_append_fromList
-      it "prop_HumanReadablePart_append_toList" $
+          prop_Prefix_append_fromList
+      it "prop_Prefix_append_toList" $
         property
-          prop_HumanReadablePart_append_toList
-      it "prop_HumanReadablePart_toText_fromText" $
+          prop_Prefix_append_toList
+      it "prop_Prefix_toText_fromText" $
         property
-          prop_HumanReadablePart_toText_fromText
-      it "prop_HumanReadablePart_fromList_toList" $
+          prop_Prefix_toText_fromText
+      it "prop_Prefix_fromList_toList" $
         property
-          prop_HumanReadablePart_fromList_toList
-      it "prop_HumanReadablePart_toList_fromList" $
+          prop_Prefix_fromList_toList
+      it "prop_Prefix_toList_fromList" $
         property
-          prop_HumanReadablePart_toList_fromList
+          prop_Prefix_toList_fromList
 
 --------------------------------------------------------------------------------
 -- Arbitrary instances
@@ -168,9 +168,9 @@ instance Arbitrary HumanReadableChar where
   arbitrary = arbitraryBoundedEnum
   shrink = shrinkBoundedEnum
 
-instance Arbitrary HumanReadablePart where
-  arbitrary = HumanReadablePart.fromList <$> arbitrary
-  shrink = shrinkMap HumanReadablePart.fromList HumanReadablePart.toList
+instance Arbitrary Prefix where
+  arbitrary = Prefix.fromList <$> arbitrary
+  shrink = shrinkMap Prefix.fromList Prefix.toList
 
 instance Arbitrary Word5 where
   arbitrary = arbitraryBoundedEnum
@@ -235,33 +235,33 @@ prop_HumanReadableChar_toChar_fromCharMaybe c =
   HumanReadableChar.fromCharMaybe (HumanReadableChar.toChar c) === Just c
 
 --------------------------------------------------------------------------------
--- Properties for HumanReadablePart
+-- Properties for Prefix
 --------------------------------------------------------------------------------
 
-prop_HumanReadablePart_append_fromList
+prop_Prefix_append_fromList
   :: NonEmpty HumanReadableChar
   -> NonEmpty HumanReadableChar
   -> Property
-prop_HumanReadablePart_append_fromList ps qs =
-  HumanReadablePart.fromList (ps <> qs)
-    === (HumanReadablePart.fromList ps <> HumanReadablePart.fromList qs)
+prop_Prefix_append_fromList ps qs =
+  Prefix.fromList (ps <> qs)
+    === (Prefix.fromList ps <> Prefix.fromList qs)
 
-prop_HumanReadablePart_append_toList
-  :: HumanReadablePart
-  -> HumanReadablePart
+prop_Prefix_append_toList
+  :: Prefix
+  -> Prefix
   -> Property
-prop_HumanReadablePart_append_toList p q =
-  HumanReadablePart.toList (p <> q)
-    === (HumanReadablePart.toList p <> HumanReadablePart.toList q)
+prop_Prefix_append_toList p q =
+  Prefix.toList (p <> q)
+    === (Prefix.toList p <> Prefix.toList q)
 
-prop_HumanReadablePart_toText_fromText :: HumanReadablePart -> Property
-prop_HumanReadablePart_toText_fromText d =
-  HumanReadablePart.fromText (HumanReadablePart.toText d) === Right d
+prop_Prefix_toText_fromText :: Prefix -> Property
+prop_Prefix_toText_fromText d =
+  Prefix.fromText (Prefix.toText d) === Right d
 
-prop_HumanReadablePart_toList_fromList :: HumanReadablePart -> Property
-prop_HumanReadablePart_toList_fromList d =
-  HumanReadablePart.fromList (HumanReadablePart.toList d) === d
+prop_Prefix_toList_fromList :: Prefix -> Property
+prop_Prefix_toList_fromList d =
+  Prefix.fromList (Prefix.toList d) === d
 
-prop_HumanReadablePart_fromList_toList :: NonEmpty HumanReadableChar -> Property
-prop_HumanReadablePart_fromList_toList ws =
-  HumanReadablePart.toList (HumanReadablePart.fromList ws) === ws
+prop_Prefix_fromList_toList :: NonEmpty HumanReadableChar -> Property
+prop_Prefix_fromList_toList ws =
+  Prefix.toList (Prefix.fromList ws) === ws
