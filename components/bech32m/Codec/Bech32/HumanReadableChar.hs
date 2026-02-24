@@ -30,13 +30,13 @@ import Data.Maybe (fromMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Type.Bool (Not, type (&&))
 import Data.Type.Equality (type (==))
+import Data.Word (Word8)
 import GHC.Generics (Generic)
 import GHC.TypeError (Assert, TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits (CmpChar, KnownChar, charVal)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude
-import Data.Word (Word8)
 
 data HumanReadableChar
   = HumanReadableChar_033

@@ -5,6 +5,7 @@
 module Data.Word5
   ( Word5 (..)
   , fromIntegral
+  , toWord8
   )
 where
 
