@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -6,6 +7,8 @@
 module Codec.Bech32.Utilities where
 
 import Data.Kind (Constraint)
+import Data.Text (Text)
+import Data.Text qualified as Text
 import GHC.TypeError (ErrorMessage (type (:$$:)), TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits (AppendSymbol, ConsSymbol, Nat, Symbol, type (+), type (-))
@@ -16,6 +19,14 @@ fromRight = (`either` id)
 maybeToEither :: a -> Maybe b -> Either a b
 maybeToEither _ (Just b) = Right b
 maybeToEither a Nothing = Left a
+
+splitOnLast :: Char -> Text -> Maybe (Text, Text)
+splitOnLast c t =
+  case Text.breakOnEnd (Text.singleton c) t of
+    ("", _) ->
+      Nothing
+    (prefixWith1, suffix) ->
+      Just (Text.init prefixWith1, suffix)
 
 type family
   InvalidCharError

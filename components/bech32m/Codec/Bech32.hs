@@ -1,5 +1,4 @@
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Codec.Bech32 where
@@ -14,6 +13,7 @@ import Codec.Bech32.Suffix.Checksum qualified as Checksum
 import Codec.Bech32.Suffix.Payload (Payload)
 import Codec.Bech32.Suffix.Payload qualified as Payload
 import Codec.Bech32.Utilities (maybeToEither)
+import Codec.Bech32.Utilities qualified as Text (splitOnLast)
 import Data.Bifunctor (Bifunctor (first))
 import Data.Bits (Bits (shiftL, shiftR, testBit, xor, (.&.)), (.>>.))
 import Data.Foldable qualified as Foldable
@@ -24,33 +24,8 @@ import Data.Word (Word32)
 import Data.Word5 (Word5)
 import Data.Word5 qualified as Word5
 
--- TODO:
---
--- Payload should really be DataPayload (or similar) because the Payload
--- is actually the combination of the DataPayload and the Checksum.
---
--- Prefix
--- PrefixChar
---
--- DataPayload
--- Payload -- this can be a combination of DataPayload and Checksum
--- SuffixChar
---
---
--- How about:
--- Suffix
--- SuffixChar
-
 separatorChar :: Char
 separatorChar = '1'
-
-splitOnLast :: Char -> Text -> Maybe (Text, Text)
-splitOnLast c t =
-  case Text.breakOnEnd (Text.singleton c) t of
-    ("", _) ->
-      Nothing
-    (prefixWith1, suffix) ->
-      Just (Text.init prefixWith1, suffix)
 
 humanReadablePartToWords :: Prefix -> [Word5]
 humanReadablePartToWords (Prefix.toList -> cs) =
@@ -92,7 +67,7 @@ data DecodeError = DecodeError
 
 decode :: Text -> Either DecodeError (Prefix, Payload)
 decode t = do
-  (prefixText, suffixText) <- handleMaybe $ splitOnLast separatorChar t
+  (prefixText, suffixText) <- handleMaybe $ Text.splitOnLast separatorChar t
   prefix <- handleEither $ Prefix.fromText prefixText
   Suffix {payload, checksum} <- handleEither $ Suffix.fromText suffixText
   if computeChecksum prefix payload == checksum
