@@ -11,8 +11,10 @@ import Codec.Bech32.HumanReadableChar (HumanReadableChar)
 import Codec.Bech32.HumanReadableChar qualified as HumanReadableChar
 import Codec.Bech32.HumanReadablePart (HumanReadablePart)
 import Codec.Bech32.HumanReadablePart qualified as HumanReadablePart
+import Data.Bit (Bit)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as List (NonEmpty)
+import Data.Word (Word8)
 import Data.Word5 (Word5)
 import Test.Hspec (describe, hspec, it)
 import Test.QuickCheck
@@ -26,7 +28,8 @@ import Test.QuickCheck
   )
 import Test.QuickCheck.Arbitrary ()
 import Test.QuickCheck.Classes
-  ( boundedEnumLaws
+  ( bitsLaws
+  , boundedEnumLaws
   , eqLaws
   , ixLaws
   , monoidLaws
@@ -35,14 +38,23 @@ import Test.QuickCheck.Classes
   , semigroupLaws
   , semigroupMonoidLaws
   , showLaws
-  , showReadLaws, bitsLaws
+  , showReadLaws
   )
 import Test.QuickCheck.Classes.Hspec (testLawsMany)
-import Data.Word (Word8)
 
 main :: IO ()
 main = hspec $ do
   describe "Class laws" $ do
+    testLawsMany @Bit
+      [ bitsLaws
+      , boundedEnumLaws
+      , eqLaws
+      , ixLaws
+      , numLaws
+      , ordLaws
+      , showLaws
+      , showReadLaws
+      ]
     testLawsMany @DataChar
       [ boundedEnumLaws
       , eqLaws
@@ -139,6 +151,10 @@ main = hspec $ do
 --------------------------------------------------------------------------------
 -- Arbitrary instances
 --------------------------------------------------------------------------------
+
+instance Arbitrary Bit where
+  arbitrary = arbitraryBoundedEnum
+  shrink = shrinkBoundedEnum
 
 instance Arbitrary DataChar where
   arbitrary = arbitraryBoundedEnum

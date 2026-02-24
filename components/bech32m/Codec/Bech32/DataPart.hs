@@ -26,7 +26,7 @@ where
 import Codec.Bech32.DataChar qualified as DataChar
 import Codec.Bech32.Utilities (InvalidCharError, fromRight, maybeToEither)
 import Data.Bifunctor (Bifunctor (first))
-import Data.BitSeq (Bit (B0, B1))
+import Data.Bit (Bit (B0, B1))
 import Data.BitSeq qualified as BitSeq
 import Data.Bits (FiniteBits)
 import Data.Foldable qualified as Foldable
