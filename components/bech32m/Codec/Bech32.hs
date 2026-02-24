@@ -69,7 +69,8 @@ decode :: Text -> Either DecodeError (Prefix, Payload)
 decode t = do
   (prefixText, suffixText) <- handleMaybe $ Text.splitOnLast separatorChar t
   prefix <- handleEither $ Prefix.fromText prefixText
-  Suffix {payload, checksum} <- handleEither $ Suffix.fromText suffixText
+  suffix <- handleEither $ Suffix.fromText suffixText
+  let Suffix {payload, checksum} = suffix
   if computeChecksum prefix payload == checksum
     then Right (prefix, payload)
     else Left DecodeError
