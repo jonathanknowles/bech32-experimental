@@ -17,6 +17,18 @@ import Data.Text qualified as Text
 import Data.Word (Word32)
 import Data.Word5 (Word5)
 import Data.Word5 qualified as Word5
+import qualified Codec.Bech32.Checksum as Checksum
+
+-- TODO:
+--
+-- DataPart should really be DataPayload (or similar) because the DataPart
+-- is actually the combination of the DataPayload and the Checksum.
+--
+-- Prefix
+-- PrefixChar
+-- DataPayload
+-- DataPart -- this can be a combination of DataPayload and Checksum
+-- DataChar
 
 separatorChar :: Char
 separatorChar = '1'
@@ -38,7 +50,7 @@ humanReadablePartToWords (HumanReadablePart.toList -> cs) =
     ordinals = HumanReadableChar.toOrdinal <$> Foldable.toList cs
 
 polymod :: [Word5] -> Word32
-polymod = foldl step 1
+polymod = foldl' step 1
   where
     step :: Word32 -> Word5 -> Word32
     step c w =
@@ -64,3 +76,12 @@ computeChecksum hrp dp =
        (Word5.fromIntegral $ (remainder `shiftR` 10) .&. 0x1f)
        (Word5.fromIntegral $ (remainder `shiftR` 5) .&. 0x1f)
        (Word5.fromIntegral $ remainder .&. 0x1f)
+
+encode :: HumanReadablePart -> DataPart -> Text
+encode hrp dp =
+  HumanReadablePart.toText hrp
+    <> "1"
+    <> DataPart.toText dp
+    <> Checksum.toText cs
+  where
+    cs = computeChecksum hrp dp
