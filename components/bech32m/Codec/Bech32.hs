@@ -3,13 +3,13 @@
 
 module Codec.Bech32 where
 
-import Codec.Bech32.Checksum (Checksum (Checksum))
-import Codec.Bech32.Checksum qualified as Checksum
-import Codec.Bech32.Suffix.Payload (Payload)
-import Codec.Bech32.Suffix.Payload qualified as Payload
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
 import Codec.Bech32.Prefix.Char qualified as PrefixChar
+import Codec.Bech32.Suffix.Checksum (Checksum (Checksum))
+import Codec.Bech32.Suffix.Checksum qualified as Checksum
+import Codec.Bech32.Suffix.Payload (Payload)
+import Codec.Bech32.Suffix.Payload qualified as Payload
 import Data.Bits (Bits (shiftL, shiftR, testBit, xor, (.&.)), (.>>.))
 import Data.Foldable qualified as Foldable
 import Data.Functor ((<&>))

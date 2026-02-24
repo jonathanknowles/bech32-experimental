@@ -39,13 +39,7 @@ import Data.Text qualified as Text
 import Data.Type.Bool (If)
 import Data.Word (Word8)
 import Data.Word5 (Word5)
-import GHC.TypeLits
-  ( KnownSymbol
-  , Symbol
-  , UnconsSymbol
-  , symbolVal
-  , type (+)
-  )
+import GHC.TypeLits (KnownSymbol, Symbol, UnconsSymbol, symbolVal, type (+))
 import GHC.TypeNats (Nat)
 import Numeric.Natural (Natural)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)

@@ -32,12 +32,12 @@ library
                     , extensions
     exposed-modules:
       Codec.Bech32
-      Codec.Bech32.Checksum
-      Codec.Bech32.Suffix.Payload
       Codec.Bech32.Prefix
       Codec.Bech32.Prefix.Char
       Codec.Bech32.Suffix
       Codec.Bech32.Suffix.Char
+      Codec.Bech32.Suffix.Checksum
+      Codec.Bech32.Suffix.Payload
       Data.Bit
       Data.BitSeq
       Data.Word5

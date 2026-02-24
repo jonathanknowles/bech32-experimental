@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Codec.Bech32.Checksum where
+module Codec.Bech32.Suffix.Checksum where
 
 import Codec.Bech32.Suffix.Char qualified as SuffixChar
 import Data.Text (Text)
