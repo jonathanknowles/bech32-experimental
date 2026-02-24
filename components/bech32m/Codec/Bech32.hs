@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -6,10 +7,14 @@ module Codec.Bech32 where
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
 import Codec.Bech32.Prefix.Char qualified as PrefixChar
+import Codec.Bech32.Suffix (Suffix (Suffix, checksum, payload))
+import Codec.Bech32.Suffix qualified as Suffix
 import Codec.Bech32.Suffix.Checksum (Checksum (Checksum))
 import Codec.Bech32.Suffix.Checksum qualified as Checksum
 import Codec.Bech32.Suffix.Payload (Payload)
 import Codec.Bech32.Suffix.Payload qualified as Payload
+import Codec.Bech32.Utilities (maybeToEither)
+import Data.Bifunctor (Bifunctor (first))
 import Data.Bits (Bits (shiftL, shiftR, testBit, xor, (.&.)), (.>>.))
 import Data.Foldable qualified as Foldable
 import Data.Functor ((<&>))
@@ -39,9 +44,9 @@ import Data.Word5 qualified as Word5
 separatorChar :: Char
 separatorChar = '1'
 
-splitOnSeparator :: Text -> Maybe (Text, Text)
-splitOnSeparator t =
-  case Text.breakOnEnd (Text.singleton separatorChar) t of
+splitOnLast :: Char -> Text -> Maybe (Text, Text)
+splitOnLast c t =
+  case Text.breakOnEnd (Text.singleton c) t of
     ("", _) ->
       Nothing
     (prefixWith1, suffix) ->
@@ -83,10 +88,24 @@ computeChecksum hrp dp =
        (Word5.fromIntegral $ (remainder `shiftR` 5) .&. 0x1f)
        (Word5.fromIntegral $ remainder .&. 0x1f)
 
+data DecodeError = DecodeError
+
+decode :: Text -> Either DecodeError (Prefix, Payload)
+decode t = do
+  (prefixText, suffixText) <- handleMaybe $ splitOnLast separatorChar t
+  prefix <- handleEither $ Prefix.fromText prefixText
+  Suffix {payload, checksum} <- handleEither $ Suffix.fromText suffixText
+  if computeChecksum prefix payload == checksum
+    then Right (prefix, payload)
+    else Left DecodeError
+  where
+    handleEither = first (const DecodeError)
+    handleMaybe = maybeToEither DecodeError
+
 encode :: Prefix -> Payload -> Text
 encode hrp dp =
   Prefix.toText hrp
-    <> "1"
+    <> Text.singleton separatorChar
     <> Payload.toText dp
     <> Checksum.toText cs
   where
