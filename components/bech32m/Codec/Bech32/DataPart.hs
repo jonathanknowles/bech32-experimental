@@ -25,8 +25,10 @@ where
 
 import Codec.Bech32.DataChar qualified as DataChar
 import Codec.Bech32.Utilities (InvalidCharError, fromRight, maybeToEither)
+import Data.Bifunctor (Bifunctor (first))
 import Data.BitSeq (Bit (B0, B1))
 import Data.BitSeq qualified as BitSeq
+import Data.Bits (FiniteBits)
 import Data.Foldable qualified as Foldable
 import Data.Kind (Constraint)
 import Data.Proxy (Proxy (Proxy))
@@ -82,14 +84,14 @@ toWord5List :: DataPart -> [Word5]
 toWord5List (DataPart words) = Foldable.toList words
 
 fromWord8List :: [Word8] -> DataPart
-fromWord8List = fromWord5List . BitSeq.repartitionInflate B0
+fromWord8List = fromWord5List . resliceInflate B0
 
 toWord8List :: DataPart -> Maybe [Word8]
 toWord8List ws
-  | BitSeq.any (== B1) remainder = Nothing
+  | B1 `elem` remainder = Nothing
   | otherwise = Just result
   where
-    (remainder, result) = BitSeq.repartitionDeflate (toWord5List ws)
+    (remainder, result) = resliceDeflate (toWord5List ws)
 
 -- | Constructs a 'DataPart' from a type-level textual symbol.
 --
@@ -174,3 +176,15 @@ toText (DataPart words) =
   where
     word5ToChar :: Word5 -> Char
     word5ToChar = DataChar.toChar . DataChar.fromWord5
+
+--------------------------------------------------------------------------------
+-- Utilities
+--------------------------------------------------------------------------------
+
+resliceInflate :: (FiniteBits a, FiniteBits b) => Bit -> [a] -> [b]
+resliceInflate padding =
+  BitSeq.toChunksInflate padding . BitSeq.fromChunks
+
+resliceDeflate :: (FiniteBits a, FiniteBits b) => [a] -> ([Bit], [b])
+resliceDeflate =
+  first BitSeq.toList . BitSeq.toChunksDeflate . BitSeq.fromChunks

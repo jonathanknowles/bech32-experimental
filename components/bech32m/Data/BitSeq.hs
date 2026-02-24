@@ -16,8 +16,6 @@ module Data.BitSeq
   , toList
   , toChunksDeflate
   , toChunksInflate
-  , repartitionDeflate
-  , repartitionInflate
   )
 where
 
@@ -49,12 +47,6 @@ any f = List.any f . toList
 
 length :: BitSeq -> Int
 length = List.length . unBitSeq
-
-repartitionInflate :: (FiniteBits a, FiniteBits b) => Bit -> [a] -> [b]
-repartitionInflate padding = toChunksInflate padding . fromChunks
-
-repartitionDeflate :: (FiniteBits a, FiniteBits b) => [a] -> (BitSeq, [b])
-repartitionDeflate = toChunksDeflate . fromChunks
 
 fromList :: [Bit] -> BitSeq
 fromList = BitSeq
