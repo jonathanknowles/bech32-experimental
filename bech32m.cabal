@@ -35,7 +35,7 @@ library
       Codec.Bech32.Checksum
       Codec.Bech32.DataChar
       Codec.Bech32.DataPart
-      Codec.Bech32.HumanReadableChar
+      Codec.Bech32.Prefix.Char
       Codec.Bech32.Prefix
       Codec.Bech32.Suffix
       Data.Bit

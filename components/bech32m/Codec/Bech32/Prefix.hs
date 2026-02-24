@@ -21,8 +21,8 @@ module Codec.Bech32.Prefix
   )
 where
 
-import Codec.Bech32.HumanReadableChar (HumanReadableChar)
-import Codec.Bech32.HumanReadableChar qualified as HumanReadableChar
+import Codec.Bech32.Prefix.Char (PrefixChar)
+import Codec.Bech32.Prefix.Char qualified as Prefix.Char
 import Codec.Bech32.Utilities
   ( InvalidCharError
   , SymbolEmpty
@@ -61,7 +61,7 @@ import Prelude hiding (length)
 -- >>> :set -XTypeApplications
 -- >>> import Data.List.NonEmpty (NonEmpty ((:|)))
 
-newtype Prefix = Prefix (NESeq HumanReadableChar)
+newtype Prefix = Prefix (NESeq PrefixChar)
   deriving newtype (Eq, Ord, Semigroup)
 
 instance Read Prefix where
@@ -80,14 +80,14 @@ length (Prefix cs) = NESeq.length cs
 
 -- | Constructs a 'Prefix' from a list of characters.
 --
--- >>> import Codec.Bech32.HumanReadableChar (fromChar)
+-- >>> import Codec.Bech32.Prefix.Char (fromChar)
 --
 -- >>> fromList [fromChar @'A', fromChar @'B', fromChar @'C', fromChar @'D']
 -- fromSymbol @"ABCD"
-fromList :: List.NonEmpty HumanReadableChar -> Prefix
+fromList :: List.NonEmpty PrefixChar -> Prefix
 fromList = Prefix . NESeq.fromList
 
-toList :: Prefix -> List.NonEmpty HumanReadableChar
+toList :: Prefix -> List.NonEmpty PrefixChar
 toList (Prefix cs) = toNonEmpty cs
 
 -- | Constructs a 'Prefix' from a type-level textual symbol.
@@ -153,15 +153,15 @@ data ParseError
 fromText :: Text -> Either ParseError Prefix
 fromText = assertCharsValid >=> assertNotEmpty
   where
-    assertCharsValid :: Text -> Either ParseError [HumanReadableChar]
+    assertCharsValid :: Text -> Either ParseError [PrefixChar]
     assertCharsValid = traverse parseChar . zip [0 ..] . Text.unpack
       where
         parseChar (n, c) =
           maybeToEither
             (ParseErrorInvalidChar n)
-            (HumanReadableChar.fromCharMaybe c)
+            (Prefix.Char.fromCharMaybe c)
 
-    assertNotEmpty :: [HumanReadableChar] -> Either ParseError Prefix
+    assertNotEmpty :: [PrefixChar] -> Either ParseError Prefix
     assertNotEmpty =
       maybeToEither ParseErrorEmpty . fmap fromList . List.NonEmpty.nonEmpty
 
@@ -183,10 +183,10 @@ type family
   SymbolCharInvalidInner _ Nothing _ = Nothing
   SymbolCharInvalidInner s0 (Just '(c, s)) n =
     If
-      (HumanReadableChar.ValidChar c)
+      (Prefix.Char.ValidChar c)
       (SymbolCharInvalidInner s0 (UnconsSymbol s) (n + 1))
       (Just '(s0, n))
 
 toText :: Prefix -> Text
 toText (Prefix cs) =
-  Text.pack $ HumanReadableChar.toChar <$> Foldable.toList cs
+  Text.pack $ Prefix.Char.toChar <$> Foldable.toList cs

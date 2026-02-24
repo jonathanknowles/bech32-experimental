@@ -6,7 +6,7 @@ module Codec.Bech32 where
 import Codec.Bech32.Checksum (Checksum (Checksum))
 import Codec.Bech32.DataPart (DataPart)
 import Codec.Bech32.DataPart qualified as DataPart
-import Codec.Bech32.HumanReadableChar qualified as HumanReadableChar
+import Codec.Bech32.Prefix.Char qualified as Prefix.Char
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
 import Data.Bits (Bits (shiftL, shiftR, testBit, xor, (.&.)), (.>>.))
@@ -53,7 +53,7 @@ humanReadablePartToWords (Prefix.toList -> cs) =
   where
     hiWords = ordinals <&> Word5.fromIntegral . (.>>. 5)
     loWords = ordinals <&> Word5.fromIntegral
-    ordinals = HumanReadableChar.toOrdinal <$> Foldable.toList cs
+    ordinals = Prefix.Char.toOrdinal <$> Foldable.toList cs
 
 polymod :: [Word5] -> Word32
 polymod = foldl' step 1

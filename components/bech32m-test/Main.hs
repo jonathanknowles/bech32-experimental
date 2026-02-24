@@ -7,8 +7,8 @@ import Codec.Bech32.DataChar (DataChar)
 import Codec.Bech32.DataChar qualified as DataChar
 import Codec.Bech32.DataPart (DataPart)
 import Codec.Bech32.DataPart qualified as DataPart
-import Codec.Bech32.HumanReadableChar (HumanReadableChar)
-import Codec.Bech32.HumanReadableChar qualified as HumanReadableChar
+import Codec.Bech32.Prefix.Char (PrefixChar)
+import Codec.Bech32.Prefix.Char qualified as Prefix.Char
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
 import Data.Bit (Bit)
@@ -72,7 +72,7 @@ main = hspec $ do
       , showLaws
       , showReadLaws
       ]
-    testLawsMany @HumanReadableChar
+    testLawsMany @PrefixChar
       [ boundedEnumLaws
       , eqLaws
       , ixLaws
@@ -127,10 +127,10 @@ main = hspec $ do
       it "prop_DataPart_fromWord8List_toWord8List" $
         property
           prop_DataPart_fromWord8List_toWord8List
-    describe "HumanReadableChar" $ do
-      it "prop_HumanReadableChar_toChar_fromCharMaybe" $
+    describe "PrefixChar" $ do
+      it "prop_PrefixChar_toChar_fromCharMaybe" $
         property
-          prop_HumanReadableChar_toChar_fromCharMaybe
+          prop_PrefixChar_toChar_fromCharMaybe
     describe "Prefix" $ do
       it "prop_Prefix_append_fromList" $
         property
@@ -164,7 +164,7 @@ instance Arbitrary DataPart where
   arbitrary = DataPart.fromWord5List <$> arbitrary
   shrink = shrinkMap DataPart.fromWord5List DataPart.toWord5List
 
-instance Arbitrary HumanReadableChar where
+instance Arbitrary PrefixChar where
   arbitrary = arbitraryBoundedEnum
   shrink = shrinkBoundedEnum
 
@@ -227,20 +227,20 @@ prop_DataPart_fromWord8List_toWord8List ws =
   DataPart.toWord8List (DataPart.fromWord8List ws) === Just ws
 
 --------------------------------------------------------------------------------
--- Properties for HumanReadableChar
+-- Properties for PrefixChar
 --------------------------------------------------------------------------------
 
-prop_HumanReadableChar_toChar_fromCharMaybe :: HumanReadableChar -> Property
-prop_HumanReadableChar_toChar_fromCharMaybe c =
-  HumanReadableChar.fromCharMaybe (HumanReadableChar.toChar c) === Just c
+prop_PrefixChar_toChar_fromCharMaybe :: PrefixChar -> Property
+prop_PrefixChar_toChar_fromCharMaybe c =
+  PrefixChar.fromCharMaybe (PrefixChar.toChar c) === Just c
 
 --------------------------------------------------------------------------------
 -- Properties for Prefix
 --------------------------------------------------------------------------------
 
 prop_Prefix_append_fromList
-  :: NonEmpty HumanReadableChar
-  -> NonEmpty HumanReadableChar
+  :: NonEmpty PrefixChar
+  -> NonEmpty PrefixChar
   -> Property
 prop_Prefix_append_fromList ps qs =
   Prefix.fromList (ps <> qs)
@@ -262,6 +262,6 @@ prop_Prefix_toList_fromList :: Prefix -> Property
 prop_Prefix_toList_fromList d =
   Prefix.fromList (Prefix.toList d) === d
 
-prop_Prefix_fromList_toList :: NonEmpty HumanReadableChar -> Property
+prop_Prefix_fromList_toList :: NonEmpty PrefixChar -> Property
 prop_Prefix_fromList_toList ws =
   Prefix.toList (Prefix.fromList ws) === ws
