@@ -1,12 +1,19 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Codec.Bech32.Suffix.Checksum where
+module Codec.Bech32.Suffix.Checksum
+  ( Checksum (..)
+  , fromText
+  , toText
+  )
+where
 
 import Codec.Bech32.Suffix.Char qualified as SuffixChar
+import Codec.Bech32.Utilities (maybeToEither)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Word5 (Word5)
+import GHC.Natural (Natural)
 
 data Checksum = Checksum
   { c0 :: !Word5
@@ -17,6 +24,26 @@ data Checksum = Checksum
   , c5 :: !Word5
   }
   deriving stock (Eq, Ord, Read, Show)
+
+data DecodeError
+  = InvalidLength
+  | InvalidChar !Natural
+  deriving (Eq, Ord, Show)
+
+fromText :: Text -> Either DecodeError Checksum
+fromText text = do
+  ws <- parseToWords text
+  case ws of
+    [c0, c1, c2, c3, c4, c5] -> Right Checksum {c0, c1, c2, c3, c4, c5}
+    _ -> Left InvalidLength
+  where
+    parseToWords :: Text -> Either DecodeError [Word5]
+    parseToWords = traverse parseChar . zip [0 ..] . Text.unpack
+      where
+        parseChar (n, c) =
+          maybeToEither
+            (InvalidChar n)
+            (SuffixChar.toWord5 <$> SuffixChar.fromCharMaybe c)
 
 toText :: Checksum -> Text
 toText Checksum {c0, c1, c2, c3, c4, c5} =

@@ -16,6 +16,7 @@ module Codec.Bech32.Prefix
   , toList
   , fromSymbol
   , fromText
+  , ParseError (..)
   , toText
   , length
   )

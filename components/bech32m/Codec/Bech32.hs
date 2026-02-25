@@ -14,7 +14,6 @@ import Codec.Bech32.Suffix.Payload (Payload)
 import Codec.Bech32.Suffix.Payload qualified as Payload
 import Codec.Bech32.Utilities (maybeToEither)
 import Codec.Bech32.Utilities qualified as Text (splitOnLast)
-import Data.Bifunctor (Bifunctor (first))
 import Data.Bits (Bits (shiftL, shiftR, testBit, xor, (.&.)), (.>>.))
 import Data.Foldable qualified as Foldable
 import Data.Functor ((<&>))
@@ -23,6 +22,7 @@ import Data.Text qualified as Text
 import Data.Word (Word32)
 import Data.Word5 (Word5)
 import Data.Word5 qualified as Word5
+import Numeric.Natural (Natural)
 
 separatorChar :: Char
 separatorChar = '1'
@@ -63,20 +63,38 @@ computeChecksum hrp dp =
        (Word5.fromIntegral $ (remainder `shiftR` 5) .&. 0x1f)
        (Word5.fromIntegral $ remainder .&. 0x1f)
 
-data DecodeError = DecodeError
+data DecodeError
+  = MissingSeparator
+  | PrefixTooShort
+  | SuffixTooShort
+  | InvalidChar !Natural
+  | InvalidChecksum
+  deriving (Eq, Ord, Show)
 
 decode :: Text -> Either DecodeError (Prefix, Payload)
 decode t = do
-  (prefixText, suffixText) <- handleMaybe $ Text.splitOnLast separatorChar t
-  prefix <- handleEither $ Prefix.fromText prefixText
-  suffix <- handleEither $ Suffix.fromText suffixText
+  (prefixText, suffixText) <- splitOnSeparator t
+  prefix <- parsePrefix prefixText
+  suffix <- parseSuffix suffixText (fromIntegral (Text.length prefixText) + 1)
   let Suffix {payload, checksum} = suffix
   if computeChecksum prefix payload == checksum
     then Right (prefix, payload)
-    else Left DecodeError
+    else Left InvalidChecksum
   where
-    handleEither = first (const DecodeError)
-    handleMaybe = maybeToEither DecodeError
+    splitOnSeparator =
+      maybeToEither MissingSeparator . Text.splitOnLast separatorChar
+
+    parsePrefix p =
+      case Prefix.fromText p of
+        Right prefix -> Right prefix
+        Left Prefix.ParseErrorEmpty -> Left PrefixTooShort
+        Left (Prefix.ParseErrorInvalidChar n) -> Left (InvalidChar n)
+
+    parseSuffix s m =
+      case Suffix.fromText s of
+        Right suffix -> Right suffix
+        Left Suffix.TooShort -> Left SuffixTooShort
+        Left (Suffix.InvalidChar n) -> Left (InvalidChar (m + n + 1))
 
 encode :: Prefix -> Payload -> Text
 encode hrp dp =
