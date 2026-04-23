@@ -18,11 +18,14 @@ module Codec.Bech32.Prefix.Char
   , fromChar
   , fromCharMaybe
   , toChar
+  , fromOrdinal
+  , fromOrdinalMaybe
   , toOrdinal
   , ValidChar
   )
 where
 
+import Data.Char qualified as Char
 import Data.Finitary (Finitary)
 import Data.Ix (Ix)
 import Data.Kind (Constraint)
@@ -30,11 +33,18 @@ import Data.Maybe (fromMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Type.Bool (Not, type (&&))
 import Data.Type.Equality (type (==))
-import Data.Word (Word8)
 import GHC.Generics (Generic)
 import GHC.TypeError (Assert, TypeError)
 import GHC.TypeError qualified as TypeError
-import GHC.TypeLits (CmpChar, KnownChar, charVal)
+import GHC.TypeLits
+  ( CmpChar
+  , CmpNat
+  , KnownChar
+  , KnownNat
+  , Nat
+  , charVal
+  , natVal
+  )
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude
 
@@ -163,116 +173,145 @@ type CharError =
   TypeError.Text
     "A PrefixChar must be a character in the range ['!' .. '~']."
 
+type family KnownValidOrdinal (c :: Nat) :: Constraint where
+  KnownValidOrdinal c =
+    ( KnownNat c
+    , Assert (ValidOrdinal c) (TypeError OrdinalError)
+    )
+
+type family ValidOrdinal (c :: Nat) :: Bool where
+  ValidOrdinal c =
+    (&&)
+      (Not (CmpNat c 033 == 'LT))
+      (Not (CmpNat c 126 == 'GT))
+
+type OrdinalError =
+  TypeError.Text
+    "A PrefixChar must correspond to an ordinal in the range [33 .. 126]."
+
 fromChar :: forall c. KnownValidChar c => PrefixChar
 fromChar =
   fromMaybe unexpectedOutOfRange $ fromCharMaybe $ charVal $ Proxy @c
   where
     unexpectedOutOfRange = error "PrefixChar.fromChar"
 
+-- Instead have fromOrdinalMaybe and make fromCharMaybe delegate
 fromCharMaybe :: Char -> Maybe PrefixChar
-fromCharMaybe = \case
-  '!' -> Just PrefixChar_033
-  '"' -> Just PrefixChar_034
-  '#' -> Just PrefixChar_035
-  '$' -> Just PrefixChar_036
-  '%' -> Just PrefixChar_037
-  '&' -> Just PrefixChar_038
-  '\'' -> Just PrefixChar_039
-  '(' -> Just PrefixChar_040
-  ')' -> Just PrefixChar_041
-  '*' -> Just PrefixChar_042
-  '+' -> Just PrefixChar_043
-  ',' -> Just PrefixChar_044
-  '-' -> Just PrefixChar_045
-  '.' -> Just PrefixChar_046
-  '/' -> Just PrefixChar_047
-  '0' -> Just PrefixChar_048
-  '1' -> Just PrefixChar_049
-  '2' -> Just PrefixChar_050
-  '3' -> Just PrefixChar_051
-  '4' -> Just PrefixChar_052
-  '5' -> Just PrefixChar_053
-  '6' -> Just PrefixChar_054
-  '7' -> Just PrefixChar_055
-  '8' -> Just PrefixChar_056
-  '9' -> Just PrefixChar_057
-  ':' -> Just PrefixChar_058
-  ';' -> Just PrefixChar_059
-  '<' -> Just PrefixChar_060
-  '=' -> Just PrefixChar_061
-  '>' -> Just PrefixChar_062
-  '?' -> Just PrefixChar_063
-  '@' -> Just PrefixChar_064
-  'A' -> Just PrefixChar_065
-  'B' -> Just PrefixChar_066
-  'C' -> Just PrefixChar_067
-  'D' -> Just PrefixChar_068
-  'E' -> Just PrefixChar_069
-  'F' -> Just PrefixChar_070
-  'G' -> Just PrefixChar_071
-  'H' -> Just PrefixChar_072
-  'I' -> Just PrefixChar_073
-  'J' -> Just PrefixChar_074
-  'K' -> Just PrefixChar_075
-  'L' -> Just PrefixChar_076
-  'M' -> Just PrefixChar_077
-  'N' -> Just PrefixChar_078
-  'O' -> Just PrefixChar_079
-  'P' -> Just PrefixChar_080
-  'Q' -> Just PrefixChar_081
-  'R' -> Just PrefixChar_082
-  'S' -> Just PrefixChar_083
-  'T' -> Just PrefixChar_084
-  'U' -> Just PrefixChar_085
-  'V' -> Just PrefixChar_086
-  'W' -> Just PrefixChar_087
-  'X' -> Just PrefixChar_088
-  'Y' -> Just PrefixChar_089
-  'Z' -> Just PrefixChar_090
-  '[' -> Just PrefixChar_091
-  '\\' -> Just PrefixChar_092
-  ']' -> Just PrefixChar_093
-  '^' -> Just PrefixChar_094
-  '_' -> Just PrefixChar_095
-  '`' -> Just PrefixChar_096
-  'a' -> Just PrefixChar_097
-  'b' -> Just PrefixChar_098
-  'c' -> Just PrefixChar_099
-  'd' -> Just PrefixChar_100
-  'e' -> Just PrefixChar_101
-  'f' -> Just PrefixChar_102
-  'g' -> Just PrefixChar_103
-  'h' -> Just PrefixChar_104
-  'i' -> Just PrefixChar_105
-  'j' -> Just PrefixChar_106
-  'k' -> Just PrefixChar_107
-  'l' -> Just PrefixChar_108
-  'm' -> Just PrefixChar_109
-  'n' -> Just PrefixChar_110
-  'o' -> Just PrefixChar_111
-  'p' -> Just PrefixChar_112
-  'q' -> Just PrefixChar_113
-  'r' -> Just PrefixChar_114
-  's' -> Just PrefixChar_115
-  't' -> Just PrefixChar_116
-  'u' -> Just PrefixChar_117
-  'v' -> Just PrefixChar_118
-  'w' -> Just PrefixChar_119
-  'x' -> Just PrefixChar_120
-  'y' -> Just PrefixChar_121
-  'z' -> Just PrefixChar_122
-  '{' -> Just PrefixChar_123
-  '|' -> Just PrefixChar_124
-  '}' -> Just PrefixChar_125
-  '~' -> Just PrefixChar_126
-  _ -> Nothing
+fromCharMaybe = fromOrdinalMaybe . Char.ord
 
 unsafeFromChar :: Char -> PrefixChar
 unsafeFromChar = fromMaybe onFailure . fromCharMaybe
   where
     onFailure = error "unsafeFromChar"
 
-toOrdinal :: PrefixChar -> Word8
+toChar :: PrefixChar -> Char
+toChar = Char.chr . toOrdinal
+
+fromOrdinal :: forall c. KnownValidOrdinal c => PrefixChar
+fromOrdinal =
+  fromMaybe unexpectedOutOfRange $ fromOrdinalMaybe $ natVal $ Proxy @c
+  where
+    unexpectedOutOfRange = error "PrefixChar.fromChar"
+
+fromOrdinalMaybe :: Integral i => i -> Maybe PrefixChar
+fromOrdinalMaybe = \case
+  033 -> Just PrefixChar_033
+  034 -> Just PrefixChar_034
+  035 -> Just PrefixChar_035
+  036 -> Just PrefixChar_036
+  037 -> Just PrefixChar_037
+  038 -> Just PrefixChar_038
+  039 -> Just PrefixChar_039
+  040 -> Just PrefixChar_040
+  041 -> Just PrefixChar_041
+  042 -> Just PrefixChar_042
+  043 -> Just PrefixChar_043
+  044 -> Just PrefixChar_044
+  045 -> Just PrefixChar_045
+  046 -> Just PrefixChar_046
+  047 -> Just PrefixChar_047
+  048 -> Just PrefixChar_048
+  049 -> Just PrefixChar_049
+  050 -> Just PrefixChar_050
+  051 -> Just PrefixChar_051
+  052 -> Just PrefixChar_052
+  053 -> Just PrefixChar_053
+  054 -> Just PrefixChar_054
+  055 -> Just PrefixChar_055
+  056 -> Just PrefixChar_056
+  057 -> Just PrefixChar_057
+  058 -> Just PrefixChar_058
+  059 -> Just PrefixChar_059
+  060 -> Just PrefixChar_060
+  061 -> Just PrefixChar_061
+  062 -> Just PrefixChar_062
+  063 -> Just PrefixChar_063
+  064 -> Just PrefixChar_064
+  065 -> Just PrefixChar_065
+  066 -> Just PrefixChar_066
+  067 -> Just PrefixChar_067
+  068 -> Just PrefixChar_068
+  069 -> Just PrefixChar_069
+  070 -> Just PrefixChar_070
+  071 -> Just PrefixChar_071
+  072 -> Just PrefixChar_072
+  073 -> Just PrefixChar_073
+  074 -> Just PrefixChar_074
+  075 -> Just PrefixChar_075
+  076 -> Just PrefixChar_076
+  077 -> Just PrefixChar_077
+  078 -> Just PrefixChar_078
+  079 -> Just PrefixChar_079
+  080 -> Just PrefixChar_080
+  081 -> Just PrefixChar_081
+  082 -> Just PrefixChar_082
+  083 -> Just PrefixChar_083
+  084 -> Just PrefixChar_084
+  085 -> Just PrefixChar_085
+  086 -> Just PrefixChar_086
+  087 -> Just PrefixChar_087
+  088 -> Just PrefixChar_088
+  089 -> Just PrefixChar_089
+  090 -> Just PrefixChar_090
+  091 -> Just PrefixChar_091
+  092 -> Just PrefixChar_092
+  093 -> Just PrefixChar_093
+  094 -> Just PrefixChar_094
+  095 -> Just PrefixChar_095
+  096 -> Just PrefixChar_096
+  097 -> Just PrefixChar_097
+  098 -> Just PrefixChar_098
+  099 -> Just PrefixChar_099
+  100 -> Just PrefixChar_100
+  101 -> Just PrefixChar_101
+  102 -> Just PrefixChar_102
+  103 -> Just PrefixChar_103
+  104 -> Just PrefixChar_104
+  105 -> Just PrefixChar_105
+  106 -> Just PrefixChar_106
+  107 -> Just PrefixChar_107
+  108 -> Just PrefixChar_108
+  109 -> Just PrefixChar_109
+  110 -> Just PrefixChar_110
+  111 -> Just PrefixChar_111
+  112 -> Just PrefixChar_112
+  113 -> Just PrefixChar_113
+  114 -> Just PrefixChar_114
+  115 -> Just PrefixChar_115
+  116 -> Just PrefixChar_116
+  117 -> Just PrefixChar_117
+  118 -> Just PrefixChar_118
+  119 -> Just PrefixChar_119
+  120 -> Just PrefixChar_120
+  121 -> Just PrefixChar_121
+  122 -> Just PrefixChar_122
+  123 -> Just PrefixChar_123
+  124 -> Just PrefixChar_124
+  125 -> Just PrefixChar_125
+  126 -> Just PrefixChar_126
+  ___ -> Nothing
+
+toOrdinal :: PrefixChar -> Int
 toOrdinal = \case
   PrefixChar_033 -> 033
   PrefixChar_034 -> 034
@@ -368,100 +407,3 @@ toOrdinal = \case
   PrefixChar_124 -> 124
   PrefixChar_125 -> 125
   PrefixChar_126 -> 126
-
-toChar :: PrefixChar -> Char
-toChar = \case
-  PrefixChar_033 -> '!'
-  PrefixChar_034 -> '"'
-  PrefixChar_035 -> '#'
-  PrefixChar_036 -> '$'
-  PrefixChar_037 -> '%'
-  PrefixChar_038 -> '&'
-  PrefixChar_039 -> '\''
-  PrefixChar_040 -> '('
-  PrefixChar_041 -> ')'
-  PrefixChar_042 -> '*'
-  PrefixChar_043 -> '+'
-  PrefixChar_044 -> ','
-  PrefixChar_045 -> '-'
-  PrefixChar_046 -> '.'
-  PrefixChar_047 -> '/'
-  PrefixChar_048 -> '0'
-  PrefixChar_049 -> '1'
-  PrefixChar_050 -> '2'
-  PrefixChar_051 -> '3'
-  PrefixChar_052 -> '4'
-  PrefixChar_053 -> '5'
-  PrefixChar_054 -> '6'
-  PrefixChar_055 -> '7'
-  PrefixChar_056 -> '8'
-  PrefixChar_057 -> '9'
-  PrefixChar_058 -> ':'
-  PrefixChar_059 -> ';'
-  PrefixChar_060 -> '<'
-  PrefixChar_061 -> '='
-  PrefixChar_062 -> '>'
-  PrefixChar_063 -> '?'
-  PrefixChar_064 -> '@'
-  PrefixChar_065 -> 'A'
-  PrefixChar_066 -> 'B'
-  PrefixChar_067 -> 'C'
-  PrefixChar_068 -> 'D'
-  PrefixChar_069 -> 'E'
-  PrefixChar_070 -> 'F'
-  PrefixChar_071 -> 'G'
-  PrefixChar_072 -> 'H'
-  PrefixChar_073 -> 'I'
-  PrefixChar_074 -> 'J'
-  PrefixChar_075 -> 'K'
-  PrefixChar_076 -> 'L'
-  PrefixChar_077 -> 'M'
-  PrefixChar_078 -> 'N'
-  PrefixChar_079 -> 'O'
-  PrefixChar_080 -> 'P'
-  PrefixChar_081 -> 'Q'
-  PrefixChar_082 -> 'R'
-  PrefixChar_083 -> 'S'
-  PrefixChar_084 -> 'T'
-  PrefixChar_085 -> 'U'
-  PrefixChar_086 -> 'V'
-  PrefixChar_087 -> 'W'
-  PrefixChar_088 -> 'X'
-  PrefixChar_089 -> 'Y'
-  PrefixChar_090 -> 'Z'
-  PrefixChar_091 -> '['
-  PrefixChar_092 -> '\\'
-  PrefixChar_093 -> ']'
-  PrefixChar_094 -> '^'
-  PrefixChar_095 -> '_'
-  PrefixChar_096 -> '`'
-  PrefixChar_097 -> 'a'
-  PrefixChar_098 -> 'b'
-  PrefixChar_099 -> 'c'
-  PrefixChar_100 -> 'd'
-  PrefixChar_101 -> 'e'
-  PrefixChar_102 -> 'f'
-  PrefixChar_103 -> 'g'
-  PrefixChar_104 -> 'h'
-  PrefixChar_105 -> 'i'
-  PrefixChar_106 -> 'j'
-  PrefixChar_107 -> 'k'
-  PrefixChar_108 -> 'l'
-  PrefixChar_109 -> 'm'
-  PrefixChar_110 -> 'n'
-  PrefixChar_111 -> 'o'
-  PrefixChar_112 -> 'p'
-  PrefixChar_113 -> 'q'
-  PrefixChar_114 -> 'r'
-  PrefixChar_115 -> 's'
-  PrefixChar_116 -> 't'
-  PrefixChar_117 -> 'u'
-  PrefixChar_118 -> 'v'
-  PrefixChar_119 -> 'w'
-  PrefixChar_120 -> 'x'
-  PrefixChar_121 -> 'y'
-  PrefixChar_122 -> 'z'
-  PrefixChar_123 -> '{'
-  PrefixChar_124 -> '|'
-  PrefixChar_125 -> '}'
-  PrefixChar_126 -> '~'
