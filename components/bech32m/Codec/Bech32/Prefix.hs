@@ -72,7 +72,6 @@ import Prelude hiding (length)
 --------------------------------------------------------------------------------
 
 -- | A valid Bech32 prefix.
---
 newtype Prefix = Prefix (NESeq PrefixChar)
   deriving newtype (Eq, Ord, Semigroup)
 
@@ -91,7 +90,6 @@ instance Show Prefix where
 --
 -- >>> length (fromSymbol @"ABCD")
 -- 4
---
 length :: Prefix -> Int
 length (Prefix cs) = NESeq.length cs
 
