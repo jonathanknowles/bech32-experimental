@@ -42,6 +42,7 @@ library
       Data.BitSeq
       Data.Word5
     other-modules:
+      Codec.Bech32.Prefix.Char.Types
       Codec.Bech32.Utilities
     -- other-extensions:
     build-depends:    base

@@ -29,6 +29,7 @@ where
 
 import Codec.Bech32.Prefix.Char (PrefixChar)
 import Codec.Bech32.Prefix.Char qualified as PrefixChar
+import Codec.Bech32.Prefix.Char.Types qualified as PrefixChar
 import Codec.Bech32.Utilities
   ( AssertSymbolNotEmpty
   , InvalidCharError
@@ -160,7 +161,7 @@ type family
   where
   AssertSymbolCharsValidInner Nothing = ()
   AssertSymbolCharsValidInner (Just '(s, n)) =
-    InvalidCharError s n PrefixChar.CharError
+    InvalidCharError s n PrefixChar.InvalidChar
 
 type family SymbolCharInvalid (s :: Symbol) :: Maybe (Symbol, Nat) where
   SymbolCharInvalid s = SymbolCharInvalidInner s (UnconsSymbol s) 0

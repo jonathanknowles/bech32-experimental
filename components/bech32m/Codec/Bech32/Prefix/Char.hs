@@ -10,14 +10,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Codec.Bech32.Prefix.Char
   ( -- * Type
     PrefixChar
-  , ValidChar -- TODO: make this internal, inside an internal module
-  , CharError -- TODO: make this internal, inside an internal module
 
     -- * Construction
   , fromChar
@@ -31,24 +28,15 @@ module Codec.Bech32.Prefix.Char
   )
 where
 
+import Codec.Bech32.Prefix.Char.Types (KnownValidChar, KnownValidOrdinal)
 import Data.Char qualified as Char
 import Data.Finitary (Finitary)
 import Data.Ix (Ix)
-import Data.Kind (Constraint)
 import Data.Maybe (fromMaybe)
 import Data.Proxy (Proxy (Proxy))
-import Data.Type.Bool (Not, type (&&))
-import Data.Type.Equality (type (==))
 import GHC.Generics (Generic)
-import GHC.TypeError (Assert, TypeError)
-import GHC.TypeError qualified as TypeError
 import GHC.TypeLits
-  ( CmpChar
-  , CmpNat
-  , KnownChar
-  , KnownNat
-  , Nat
-  , charVal
+  ( charVal
   , natVal
   )
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
@@ -202,7 +190,6 @@ fromChar =
 --
 -- >>> fromCharMaybe ' '
 -- Nothing
---
 fromCharMaybe :: Char -> Maybe PrefixChar
 fromCharMaybe = fromOrdinalMaybe . Char.ord
 
@@ -210,21 +197,6 @@ unsafeFromChar :: Char -> PrefixChar
 unsafeFromChar = fromMaybe onFailure . fromCharMaybe
   where
     onFailure = error "unsafeFromChar"
-
-type family KnownValidChar (c :: Char) :: Constraint where
-  KnownValidChar c =
-    ( KnownChar c
-    , Assert (ValidChar c) (TypeError (TypeError.Text CharError))
-    )
-
-type family ValidChar (c :: Char) :: Bool where
-  ValidChar c =
-    (&&)
-      (Not (CmpChar c '!' == 'LT))
-      (Not (CmpChar c '~' == 'GT))
-
-type CharError =
-  "Expected a character in the range ['!' .. '~']."
 
 --------------------------------------------------------------------------------
 -- Construction from ordinal numbers
@@ -252,21 +224,6 @@ fromOrdinal =
   where
     unexpectedOutOfRange = error "PrefixChar.fromOrdinal"
 
-type family KnownValidOrdinal (c :: Nat) :: Constraint where
-  KnownValidOrdinal c =
-    ( KnownNat c
-    , Assert (ValidOrdinal c) (TypeError (TypeError.Text OrdinalError))
-    )
-
-type family ValidOrdinal (c :: Nat) :: Bool where
-  ValidOrdinal c =
-    (&&)
-      (Not (CmpNat c 033 == 'LT))
-      (Not (CmpNat c 126 == 'GT))
-
-type OrdinalError =
-  "Expected an ordinal in the range [33 .. 126]."
-
 -- | Constructs a 'PrefixChar' from an ordinal value.
 --
 -- >>> fromOrdinalMaybe 65
@@ -279,7 +236,6 @@ type OrdinalError =
 --
 -- >>> fromOrdinalMaybe 127
 -- Nothing
---
 fromOrdinalMaybe :: Integral i => i -> Maybe PrefixChar
 fromOrdinalMaybe = \case
   033 -> Just PrefixChar_033
@@ -386,7 +342,6 @@ fromOrdinalMaybe = \case
 --
 -- >>> toChar (fromChar @'A')
 -- 'A'
---
 toChar :: PrefixChar -> Char
 toChar = Char.chr . toOrdinal
 
@@ -398,7 +353,6 @@ toChar = Char.chr . toOrdinal
 --
 -- >>> toOrdinal (fromOrdinal @65)
 -- 65
---
 toOrdinal :: PrefixChar -> Int
 toOrdinal = \case
   PrefixChar_033 -> 033
