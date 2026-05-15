@@ -13,7 +13,6 @@
 module Codec.Bech32.Prefix
   ( -- * Type
     Prefix
-  , length
 
     -- * Construction
   , fromList
@@ -24,6 +23,9 @@ module Codec.Bech32.Prefix
     -- * Conversion
   , toList
   , toText
+
+    -- * Attributes
+  , length
   )
 where
 
@@ -85,13 +87,6 @@ instance Show Prefix where
   showsPrec d hrp =
     showParen (d > 10) $
       showString "fromSymbol @" . shows (toText hrp)
-
--- | Computes the length of a 'Prefix'.
---
--- >>> length (fromSymbol @"ABCD")
--- 4
-length :: Prefix -> Int
-length (Prefix cs) = NESeq.length cs
 
 --------------------------------------------------------------------------------
 -- Construction from lists
@@ -245,3 +240,14 @@ toList (Prefix cs) = toNonEmpty cs
 toText :: Prefix -> Text
 toText (Prefix cs) =
   Text.pack $ PrefixChar.toChar <$> Foldable.toList cs
+
+--------------------------------------------------------------------------------
+-- Attributes
+--------------------------------------------------------------------------------
+
+-- | Computes the length of a 'Prefix'.
+--
+-- >>> length (fromSymbol @"ABCD")
+-- 4
+length :: Prefix -> Int
+length (Prefix cs) = NESeq.length cs

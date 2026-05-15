@@ -97,16 +97,6 @@ main = hspec $ do
       , showReadLaws
       ]
   describe "Properties" $ do
-    describe "SuffixChar" $ do
-      it "prop_SuffixChar_fromWord5_toWord5" $
-        property
-          prop_SuffixChar_fromWord5_toWord5
-      it "prop_SuffixChar_toWord5_fromWord5" $
-        property
-          prop_SuffixChar_toWord5_fromWord5
-      it "prop_SuffixChar_toChar_fromCharMaybe" $
-        property
-          prop_SuffixChar_toChar_fromCharMaybe
     describe "Payload" $ do
       it "prop_Payload_append_fromWord5List" $
         property
@@ -130,6 +120,9 @@ main = hspec $ do
       it "prop_PrefixChar_toChar_fromCharMaybe" $
         property
           prop_PrefixChar_toChar_fromCharMaybe
+      it "prop_PrefixChar_toOrdinal_fromOrdinalMaybe" $
+        property
+          prop_PrefixChar_toOrdinal_fromOrdinalMaybe
     describe "Prefix" $ do
       it "prop_Prefix_append_fromList" $
         property
@@ -146,6 +139,16 @@ main = hspec $ do
       it "prop_Prefix_toList_fromList" $
         property
           prop_Prefix_toList_fromList
+    describe "SuffixChar" $ do
+      it "prop_SuffixChar_fromWord5_toWord5" $
+        property
+          prop_SuffixChar_fromWord5_toWord5
+      it "prop_SuffixChar_toWord5_fromWord5" $
+        property
+          prop_SuffixChar_toWord5_fromWord5
+      it "prop_SuffixChar_toChar_fromCharMaybe" $
+        property
+          prop_SuffixChar_toChar_fromCharMaybe
 
 --------------------------------------------------------------------------------
 -- Arbitrary instances
@@ -174,22 +177,6 @@ instance Arbitrary Prefix where
 instance Arbitrary Word5 where
   arbitrary = arbitraryBoundedEnum
   shrink = shrinkBoundedEnum
-
---------------------------------------------------------------------------------
--- Properties for SuffixChar
---------------------------------------------------------------------------------
-
-prop_SuffixChar_fromWord5_toWord5 :: Word5 -> Property
-prop_SuffixChar_fromWord5_toWord5 w =
-  SuffixChar.toWord5 (SuffixChar.fromWord5 w) === w
-
-prop_SuffixChar_toWord5_fromWord5 :: SuffixChar -> Property
-prop_SuffixChar_toWord5_fromWord5 c =
-  SuffixChar.fromWord5 (SuffixChar.toWord5 c) === c
-
-prop_SuffixChar_toChar_fromCharMaybe :: SuffixChar -> Property
-prop_SuffixChar_toChar_fromCharMaybe c =
-  SuffixChar.fromCharMaybe (SuffixChar.toChar c) === Just c
 
 --------------------------------------------------------------------------------
 -- Properties for Payload
@@ -229,6 +216,10 @@ prop_PrefixChar_toChar_fromCharMaybe :: PrefixChar -> Property
 prop_PrefixChar_toChar_fromCharMaybe c =
   PrefixChar.fromCharMaybe (PrefixChar.toChar c) === Just c
 
+prop_PrefixChar_toOrdinal_fromOrdinalMaybe :: PrefixChar -> Property
+prop_PrefixChar_toOrdinal_fromOrdinalMaybe c =
+  PrefixChar.fromOrdinalMaybe (PrefixChar.toOrdinal c) === Just c
+
 --------------------------------------------------------------------------------
 -- Properties for Prefix
 --------------------------------------------------------------------------------
@@ -260,3 +251,19 @@ prop_Prefix_toList_fromList d =
 prop_Prefix_fromList_toList :: NonEmpty PrefixChar -> Property
 prop_Prefix_fromList_toList ws =
   Prefix.toList (Prefix.fromList ws) === ws
+
+--------------------------------------------------------------------------------
+-- Properties for SuffixChar
+--------------------------------------------------------------------------------
+
+prop_SuffixChar_fromWord5_toWord5 :: Word5 -> Property
+prop_SuffixChar_fromWord5_toWord5 w =
+  SuffixChar.toWord5 (SuffixChar.fromWord5 w) === w
+
+prop_SuffixChar_toWord5_fromWord5 :: SuffixChar -> Property
+prop_SuffixChar_toWord5_fromWord5 c =
+  SuffixChar.fromWord5 (SuffixChar.toWord5 c) === c
+
+prop_SuffixChar_toChar_fromCharMaybe :: SuffixChar -> Property
+prop_SuffixChar_toChar_fromCharMaybe c =
+  SuffixChar.fromCharMaybe (SuffixChar.toChar c) === Just c
