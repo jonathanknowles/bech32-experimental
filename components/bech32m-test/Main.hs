@@ -3,19 +3,20 @@
 
 module Main (main) where
 
-import Codec.Bech32.Suffix.Payload (Payload)
-import Codec.Bech32.Suffix.Payload qualified as Payload
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
 import Codec.Bech32.Prefix.Char (PrefixChar)
 import Codec.Bech32.Prefix.Char qualified as PrefixChar
 import Codec.Bech32.Suffix.Char (SuffixChar)
 import Codec.Bech32.Suffix.Char qualified as SuffixChar
+import Codec.Bech32.Suffix.Payload (Payload)
+import Codec.Bech32.Suffix.Payload qualified as Payload
 import Data.Bit (Bit)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Word (Word8)
 import Data.Word5 (Word5)
 import Test.Hspec (describe, hspec, it)
+import Test.Hspec.QuickCheck.Classes (testLaws)
 import Test.QuickCheck
   ( Arbitrary (arbitrary, shrink)
   , Property
@@ -39,12 +40,11 @@ import Test.QuickCheck.Classes
   , showLaws
   , showReadLaws
   )
-import Test.QuickCheck.Classes.Hspec (testLawsMany)
 
 main :: IO ()
 main = hspec $ do
   describe "Class laws" $ do
-    testLawsMany @Bit
+    testLaws @Bit
       [ bitsLaws
       , boundedEnumLaws
       , eqLaws
@@ -54,7 +54,7 @@ main = hspec $ do
       , showLaws
       , showReadLaws
       ]
-    testLawsMany @SuffixChar
+    testLaws @SuffixChar
       [ boundedEnumLaws
       , eqLaws
       , ixLaws
@@ -62,7 +62,7 @@ main = hspec $ do
       , showLaws
       , showReadLaws
       ]
-    testLawsMany @Payload
+    testLaws @Payload
       [ eqLaws
       , monoidLaws
       , ordLaws
@@ -71,7 +71,7 @@ main = hspec $ do
       , showLaws
       , showReadLaws
       ]
-    testLawsMany @PrefixChar
+    testLaws @PrefixChar
       [ boundedEnumLaws
       , eqLaws
       , ixLaws
@@ -79,14 +79,14 @@ main = hspec $ do
       , showLaws
       , showReadLaws
       ]
-    testLawsMany @Prefix
+    testLaws @Prefix
       [ eqLaws
       , ordLaws
       , semigroupLaws
       , showLaws
       , showReadLaws
       ]
-    testLawsMany @Word5
+    testLaws @Word5
       [ bitsLaws
       , boundedEnumLaws
       , eqLaws

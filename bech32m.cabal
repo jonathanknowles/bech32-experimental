@@ -60,7 +60,6 @@ test-suite bech32m-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Test.QuickCheck.Classes.Hspec
   hs-source-dirs:
       components/bech32m-test
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
@@ -69,6 +68,7 @@ test-suite bech32m-test
     , bech32m
     , finitary
     , hspec
+    , hspec-quickcheck-classes
     , QuickCheck
     , quickcheck-classes
   default-language: Haskell2010
