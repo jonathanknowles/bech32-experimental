@@ -11,22 +11,27 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Codec.Bech32.Prefix
-  ( Prefix
+  ( -- * Type
+    Prefix
+  , length
+
+    -- * Construction
   , fromList
-  , toList
   , fromSymbol
   , fromText
-  , ParseError (..)
+  , FromTextError (..)
+
+    -- * Conversion
+  , toList
   , toText
-  , length
   )
 where
 
 import Codec.Bech32.Prefix.Char (PrefixChar)
 import Codec.Bech32.Prefix.Char qualified as PrefixChar
 import Codec.Bech32.Utilities
-  ( InvalidCharError
-  , SymbolEmpty
+  ( AssertSymbolNotEmpty
+  , InvalidCharError
   , fromRight
   , maybeToEither
   )
@@ -41,9 +46,7 @@ import Data.Sequence.NonEmpty (NESeq)
 import Data.Sequence.NonEmpty qualified as NESeq
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Type.Bool (If, Not)
-import GHC.TypeError (Assert, TypeError)
-import GHC.TypeError qualified as TypeError
+import Data.Type.Bool (If)
 import GHC.TypeLits
   ( KnownSymbol
   , Nat
@@ -59,9 +62,16 @@ import Prelude hiding (length)
 -- $setup
 -- >>> :set -XDataKinds
 -- >>> :set -XOverloadedLists
+-- >>> :set -XOverloadedStrings
 -- >>> :set -XTypeApplications
--- >>> import Data.List.NonEmpty (NonEmpty ((:|)))
+-- >>> import Prelude hiding (length)
 
+--------------------------------------------------------------------------------
+-- Type
+--------------------------------------------------------------------------------
+
+-- | A valid Bech32 prefix.
+--
 newtype Prefix = Prefix (NESeq PrefixChar)
   deriving newtype (Eq, Ord, Semigroup)
 
@@ -76,37 +86,55 @@ instance Show Prefix where
     showParen (d > 10) $
       showString "fromSymbol @" . shows (toText hrp)
 
+-- | Computes the length of a 'Prefix'.
+--
+-- >>> length (fromSymbol @"ABCD")
+-- 4
+--
 length :: Prefix -> Int
 length (Prefix cs) = NESeq.length cs
 
+--------------------------------------------------------------------------------
+-- Construction from lists
+--------------------------------------------------------------------------------
+
 -- | Constructs a 'Prefix' from a list of characters.
 --
--- >>> import Codec.Bech32.Prefix.(fromChar)
+-- Assuming the following import:
+--
+-- >>> import Codec.Bech32.Prefix.Char (fromChar)
+--
+-- We can then write:
 --
 -- >>> fromList [fromChar @'A', fromChar @'B', fromChar @'C', fromChar @'D']
 -- fromSymbol @"ABCD"
 fromList :: List.NonEmpty PrefixChar -> Prefix
 fromList = Prefix . NESeq.fromList
 
-toList :: Prefix -> List.NonEmpty PrefixChar
-toList (Prefix cs) = toNonEmpty cs
+--------------------------------------------------------------------------------
+-- Construction from symbols
+--------------------------------------------------------------------------------
 
--- | Constructs a 'Prefix' from a type-level textual symbol.
+-- | Constructs a 'Prefix' from a type-level textual 'Symbol'.
 --
--- >>> fromSymbol @"AAAA"
--- fromSymbol @"AAAA"
+-- >>> fromSymbol @"ABCD"
+-- fromSymbol @"ABCD"
+--
+-- Symbols must be non-empty:
 --
 -- >>> fromSymbol @""
 -- ...
 -- ... Expected a non-empty symbol.
 -- ...
 --
--- >>> fromSymbol @"AAAA AAAA"
+-- Symbols must not contain invalid characters:
+--
+-- >>> fromSymbol @"ABCD EFGH"
 -- ...
---     • "AAAA AAAA"
+--     • "ABCD EFGH"
 --            ^
 --       Invalid character at indicated position.
---       Expected a character from the range: ['!' .. '~'].
+--       Expected a character in the range ['!' .. '~'].
 -- ...
 fromSymbol :: forall s. KnownValidSymbol s => Prefix
 fromSymbol =
@@ -122,15 +150,6 @@ type family KnownValidSymbol (s :: Symbol) :: Constraint where
     , AssertSymbolCharsValid s
     )
 
-type family AssertSymbolNotEmpty (s :: Symbol) :: Constraint where
-  AssertSymbolNotEmpty s =
-    Assert
-      (Not (SymbolEmpty s))
-      (TypeError (TypeError.Text SymbolEmptyErrorMessage))
-
-type SymbolEmptyErrorMessage =
-  "Expected a non-empty symbol."
-
 type family AssertSymbolCharsValid (s :: Symbol) :: Constraint where
   AssertSymbolCharsValid s = AssertSymbolCharsValidInner (SymbolCharInvalid s)
 
@@ -141,35 +160,7 @@ type family
   where
   AssertSymbolCharsValidInner Nothing = ()
   AssertSymbolCharsValidInner (Just '(s, n)) =
-    InvalidCharError s n InvalidCharErrorMessage
-
-type InvalidCharErrorMessage =
-  "Expected a character from the range: ['!' .. '~']."
-
-data ParseError
-  = ParseErrorEmpty
-  | ParseErrorInvalidChar Natural
-  deriving (Eq, Show)
-
-fromText :: Text -> Either ParseError Prefix
-fromText = assertCharsValid >=> assertNotEmpty
-  where
-    assertCharsValid :: Text -> Either ParseError [PrefixChar]
-    assertCharsValid = traverse parseChar . zip [0 ..] . Text.unpack
-      where
-        parseChar (n, c) =
-          maybeToEither
-            (ParseErrorInvalidChar n)
-            (PrefixChar.fromCharMaybe c)
-
-    assertNotEmpty :: [PrefixChar] -> Either ParseError Prefix
-    assertNotEmpty =
-      maybeToEither ParseErrorEmpty . fmap fromList . List.NonEmpty.nonEmpty
-
-unsafeFromText :: Text -> Prefix
-unsafeFromText = fromRight onFailure . fromText
-  where
-    onFailure = error "unsafeFromText"
+    InvalidCharError s n PrefixChar.CharError
 
 type family SymbolCharInvalid (s :: Symbol) :: Maybe (Symbol, Nat) where
   SymbolCharInvalid s = SymbolCharInvalidInner s (UnconsSymbol s) 0
@@ -188,6 +179,70 @@ type family
       (SymbolCharInvalidInner s0 (UnconsSymbol s) (n + 1))
       (Just '(s0, n))
 
+--------------------------------------------------------------------------------
+-- Construction from text
+--------------------------------------------------------------------------------
+
+-- | Constructs a 'Prefix' from text.
+--
+-- >>> fromText "ABCD"
+-- Right (fromSymbol @"ABCD")
+--
+-- The text must not be non-empty:
+--
+-- >>> fromText ""
+-- Left FromTextErrorEmpty
+--
+-- The text must not contain invalid characters:
+--
+-- >>> fromText "ABCD EFGH"
+-- Left (FromTextErrorInvalidChar 4)
+fromText :: Text -> Either FromTextError Prefix
+fromText = assertCharsValid >=> assertNotEmpty
+  where
+    assertCharsValid :: Text -> Either FromTextError [PrefixChar]
+    assertCharsValid = traverse parseChar . zip [0 ..] . Text.unpack
+      where
+        parseChar (n, c) =
+          maybeToEither
+            (FromTextErrorInvalidChar n)
+            (PrefixChar.fromCharMaybe c)
+
+    assertNotEmpty :: [PrefixChar] -> Either FromTextError Prefix
+    assertNotEmpty =
+      maybeToEither FromTextErrorEmpty . fmap fromList . List.NonEmpty.nonEmpty
+
+unsafeFromText :: Text -> Prefix
+unsafeFromText = fromRight onFailure . fromText
+  where
+    onFailure = error "unsafeFromText"
+
+data FromTextError
+  = -- | Indicates that the given 'Text' is empty.
+    FromTextErrorEmpty
+  | -- | Indicates that the character at the given 0-based index is not valid.
+    FromTextErrorInvalidChar Natural
+  deriving (Eq, Show)
+
+--------------------------------------------------------------------------------
+-- Conversion to lists
+--------------------------------------------------------------------------------
+
+-- | Converts a 'Prefix' to a list of characters.
+--
+-- >>> toList (fromSymbol @"ABCD")
+-- fromChar @'A' :| [fromChar @'B',fromChar @'C',fromChar @'D']
+toList :: Prefix -> List.NonEmpty PrefixChar
+toList (Prefix cs) = toNonEmpty cs
+
+--------------------------------------------------------------------------------
+-- Conversion to text
+--------------------------------------------------------------------------------
+
+-- | Converts a 'Prefix' to text.
+--
+-- >>> toText (fromSymbol @"ABCD")
+-- "ABCD"
 toText :: Prefix -> Text
 toText (Prefix cs) =
   Text.pack $ PrefixChar.toChar <$> Foldable.toList cs

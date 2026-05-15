@@ -12,8 +12,7 @@ import Codec.Bech32.Prefix.Char qualified as PrefixChar
 import Codec.Bech32.Suffix.Char (SuffixChar)
 import Codec.Bech32.Suffix.Char qualified as SuffixChar
 import Data.Bit (Bit)
-import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.List.NonEmpty qualified as List (NonEmpty)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Word (Word8)
 import Data.Word5 (Word5)
 import Test.Hspec (describe, hspec, it)
@@ -175,10 +174,6 @@ instance Arbitrary Prefix where
 instance Arbitrary Word5 where
   arbitrary = arbitraryBoundedEnum
   shrink = shrinkBoundedEnum
-
-instance Arbitrary a => Arbitrary (List.NonEmpty a) where
-  arbitrary = (:|) <$> arbitrary <*> arbitrary
-  shrink (a :| as) = uncurry (:|) <$> shrink (a, as)
 
 --------------------------------------------------------------------------------
 -- Properties for SuffixChar

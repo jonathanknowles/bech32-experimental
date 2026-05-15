@@ -14,14 +14,20 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Codec.Bech32.Prefix.Char
-  ( PrefixChar
+  ( -- * Type
+    PrefixChar
+  , ValidChar -- TODO: make this internal, inside an internal module
+  , CharError -- TODO: make this internal, inside an internal module
+
+    -- * Construction
   , fromChar
   , fromCharMaybe
-  , toChar
   , fromOrdinal
   , fromOrdinalMaybe
+
+    -- * Conversion
+  , toChar
   , toOrdinal
-  , ValidChar
   )
 where
 
@@ -48,6 +54,15 @@ import GHC.TypeLits
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude
 
+-- $setup
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeApplications
+
+--------------------------------------------------------------------------------
+-- Type
+--------------------------------------------------------------------------------
+
+-- | A valid Bech32 prefix character.
 data PrefixChar
   = PrefixChar_033
   | PrefixChar_034
@@ -157,10 +172,49 @@ instance Show PrefixChar where
     showParen (d > 10) $
       showString "fromChar @" . shows (toChar hrc)
 
+--------------------------------------------------------------------------------
+-- Construction from ordinary characters
+--------------------------------------------------------------------------------
+
+-- | Constructs a 'PrefixChar' from a type-level character.
+--
+-- >>> fromChar @'A'
+-- fromChar @'A'
+--
+-- The character must be in the range @[\'!\' .. \'~\']@:
+--
+-- >>> fromChar @' '
+-- ...
+-- ... Expected a character in the range ['!' .. '~'].
+-- ...
+fromChar :: forall c. KnownValidChar c => PrefixChar
+fromChar =
+  fromMaybe unexpectedOutOfRange $ fromCharMaybe $ charVal $ Proxy @c
+  where
+    unexpectedOutOfRange = error "PrefixChar.fromChar"
+
+-- | Constructs a 'PrefixChar' from an ordinary character.
+--
+-- >>> fromCharMaybe 'A'
+-- Just (fromChar @'A')
+--
+-- The character must be in the range @[\'!\' .. \'~\']@:
+--
+-- >>> fromCharMaybe ' '
+-- Nothing
+--
+fromCharMaybe :: Char -> Maybe PrefixChar
+fromCharMaybe = fromOrdinalMaybe . Char.ord
+
+unsafeFromChar :: Char -> PrefixChar
+unsafeFromChar = fromMaybe onFailure . fromCharMaybe
+  where
+    onFailure = error "unsafeFromChar"
+
 type family KnownValidChar (c :: Char) :: Constraint where
   KnownValidChar c =
     ( KnownChar c
-    , Assert (ValidChar c) (TypeError CharError)
+    , Assert (ValidChar c) (TypeError (TypeError.Text CharError))
     )
 
 type family ValidChar (c :: Char) :: Bool where
@@ -170,13 +224,38 @@ type family ValidChar (c :: Char) :: Bool where
       (Not (CmpChar c '~' == 'GT))
 
 type CharError =
-  TypeError.Text
-    "A PrefixChar must be a character in the range ['!' .. '~']."
+  "Expected a character in the range ['!' .. '~']."
+
+--------------------------------------------------------------------------------
+-- Construction from ordinal numbers
+--------------------------------------------------------------------------------
+
+-- | Constructs a 'PrefixChar' from a type-level ordinal value.
+--
+-- >>> fromOrdinal @65
+-- fromChar @'A'
+--
+-- The ordinal value must be in the range @[33 .. 126]@:
+--
+-- >>> fromOrdinal @32
+-- ...
+-- ... Expected an ordinal in the range [33 .. 126].
+-- ...
+--
+-- >>> fromOrdinal @127
+-- ...
+-- ... Expected an ordinal in the range [33 .. 126].
+-- ...
+fromOrdinal :: forall c. KnownValidOrdinal c => PrefixChar
+fromOrdinal =
+  fromMaybe unexpectedOutOfRange $ fromOrdinalMaybe $ natVal $ Proxy @c
+  where
+    unexpectedOutOfRange = error "PrefixChar.fromOrdinal"
 
 type family KnownValidOrdinal (c :: Nat) :: Constraint where
   KnownValidOrdinal c =
     ( KnownNat c
-    , Assert (ValidOrdinal c) (TypeError OrdinalError)
+    , Assert (ValidOrdinal c) (TypeError (TypeError.Text OrdinalError))
     )
 
 type family ValidOrdinal (c :: Nat) :: Bool where
@@ -186,33 +265,21 @@ type family ValidOrdinal (c :: Nat) :: Bool where
       (Not (CmpNat c 126 == 'GT))
 
 type OrdinalError =
-  TypeError.Text
-    "A PrefixChar must correspond to an ordinal in the range [33 .. 126]."
+  "Expected an ordinal in the range [33 .. 126]."
 
-fromChar :: forall c. KnownValidChar c => PrefixChar
-fromChar =
-  fromMaybe unexpectedOutOfRange $ fromCharMaybe $ charVal $ Proxy @c
-  where
-    unexpectedOutOfRange = error "PrefixChar.fromChar"
-
--- Instead have fromOrdinalMaybe and make fromCharMaybe delegate
-fromCharMaybe :: Char -> Maybe PrefixChar
-fromCharMaybe = fromOrdinalMaybe . Char.ord
-
-unsafeFromChar :: Char -> PrefixChar
-unsafeFromChar = fromMaybe onFailure . fromCharMaybe
-  where
-    onFailure = error "unsafeFromChar"
-
-toChar :: PrefixChar -> Char
-toChar = Char.chr . toOrdinal
-
-fromOrdinal :: forall c. KnownValidOrdinal c => PrefixChar
-fromOrdinal =
-  fromMaybe unexpectedOutOfRange $ fromOrdinalMaybe $ natVal $ Proxy @c
-  where
-    unexpectedOutOfRange = error "PrefixChar.fromChar"
-
+-- | Constructs a 'PrefixChar' from an ordinal value.
+--
+-- >>> fromOrdinalMaybe 65
+-- Just (fromChar @'A')
+--
+-- The character must be in the range @[33 .. 126]@:
+--
+-- >>> fromOrdinalMaybe 32
+-- Nothing
+--
+-- >>> fromOrdinalMaybe 127
+-- Nothing
+--
 fromOrdinalMaybe :: Integral i => i -> Maybe PrefixChar
 fromOrdinalMaybe = \case
   033 -> Just PrefixChar_033
@@ -311,6 +378,27 @@ fromOrdinalMaybe = \case
   126 -> Just PrefixChar_126
   ___ -> Nothing
 
+--------------------------------------------------------------------------------
+-- Conversion to ordinary characters
+--------------------------------------------------------------------------------
+
+-- | Converts a 'PrefixChar' to an ordinary character.
+--
+-- >>> toChar (fromChar @'A')
+-- 'A'
+--
+toChar :: PrefixChar -> Char
+toChar = Char.chr . toOrdinal
+
+--------------------------------------------------------------------------------
+-- Conversion to ordinal numbers
+--------------------------------------------------------------------------------
+
+-- | Converts a 'PrefixChar' to an ordinal number.
+--
+-- >>> toOrdinal (fromOrdinal @65)
+-- 65
+--
 toOrdinal :: PrefixChar -> Int
 toOrdinal = \case
   PrefixChar_033 -> 033

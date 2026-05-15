@@ -9,7 +9,8 @@ module Codec.Bech32.Utilities where
 import Data.Kind (Constraint)
 import Data.Text (Text)
 import Data.Text qualified as Text
-import GHC.TypeError (ErrorMessage (type (:$$:)), TypeError)
+import Data.Type.Bool (Not)
+import GHC.TypeError (Assert, ErrorMessage (type (:$$:)), TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits (AppendSymbol, ConsSymbol, Nat, Symbol, type (+), type (-))
 
@@ -62,3 +63,12 @@ type family
 type family SymbolEmpty (s :: Symbol) :: Bool where
   SymbolEmpty "" = True
   SymbolEmpty __ = False
+
+type family AssertSymbolNotEmpty (s :: Symbol) :: Constraint where
+  AssertSymbolNotEmpty s =
+    Assert
+      (Not (SymbolEmpty s))
+      (TypeError (TypeError.Text SymbolEmptyErrorMessage))
+
+type SymbolEmptyErrorMessage =
+  "Expected a non-empty symbol."

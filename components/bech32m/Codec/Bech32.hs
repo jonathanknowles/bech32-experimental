@@ -87,8 +87,8 @@ decode t = do
     parsePrefix p =
       case Prefix.fromText p of
         Right prefix -> Right prefix
-        Left Prefix.ParseErrorEmpty -> Left PrefixTooShort
-        Left (Prefix.ParseErrorInvalidChar n) -> Left (InvalidChar n)
+        Left Prefix.FromTextErrorEmpty -> Left PrefixTooShort
+        Left (Prefix.FromTextErrorInvalidChar n) -> Left (InvalidChar n)
 
     parseSuffix s m =
       case Suffix.fromText s of
