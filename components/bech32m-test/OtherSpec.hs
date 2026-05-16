@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Main (main) where
+module OtherSpec (spec) where
 
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
@@ -15,7 +15,7 @@ import Data.Bit (Bit)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Word (Word8)
 import Data.Word5 (Word5)
-import Test.Hspec (describe, hspec, it)
+import Test.Hspec (describe, it, Spec)
 import Test.Hspec.QuickCheck.Classes (testLaws)
 import Test.QuickCheck
   ( Arbitrary (arbitrary, shrink)
@@ -41,8 +41,8 @@ import Test.QuickCheck.Classes
   , showReadLaws
   )
 
-main :: IO ()
-main = hspec $ do
+spec :: Spec
+spec = do
   describe "Class laws" $ do
     testLaws @Bit
       [ bitsLaws

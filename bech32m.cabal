@@ -58,8 +58,10 @@ test-suite bech32m-test
   import:           warnings
                   , extensions
   type: exitcode-stdio-1.0
-  main-is: Main.hs
+  main-is: Spec.hs
   other-modules:
+      Data.BitSeqSpec
+      OtherSpec
   hs-source-dirs:
       components/bech32m-test
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
@@ -71,6 +73,8 @@ test-suite bech32m-test
     , hspec-quickcheck-classes
     , QuickCheck
     , quickcheck-classes
+  build-tool-depends:
+    hspec-discover:hspec-discover ==2.*
   default-language: Haskell2010
 
 test-suite bech32m-test-docs
