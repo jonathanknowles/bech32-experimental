@@ -14,6 +14,8 @@ import Codec.Bech32.Suffix.Payload qualified as Payload
 import Data.Bit (Bit)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Word (Word8)
+import Data.Word2 (Word2)
+import Data.Word3 (Word3)
 import Data.Word5 (Word5)
 import Test.Hspec (describe, it, Spec)
 import Test.Hspec.QuickCheck.Classes (testLaws)
@@ -83,6 +85,26 @@ spec = do
       [ eqLaws
       , ordLaws
       , semigroupLaws
+      , showLaws
+      , showReadLaws
+      ]
+    testLaws @Word2
+      [ bitsLaws
+      , boundedEnumLaws
+      , eqLaws
+      , ixLaws
+      , numLaws
+      , ordLaws
+      , showLaws
+      , showReadLaws
+      ]
+    testLaws @Word3
+      [ bitsLaws
+      , boundedEnumLaws
+      , eqLaws
+      , ixLaws
+      , numLaws
+      , ordLaws
       , showLaws
       , showReadLaws
       ]
@@ -173,6 +195,14 @@ instance Arbitrary PrefixChar where
 instance Arbitrary Prefix where
   arbitrary = Prefix.fromList <$> arbitrary
   shrink = shrinkMap Prefix.fromList Prefix.toList
+
+instance Arbitrary Word2 where
+  arbitrary = arbitraryBoundedEnum
+  shrink = shrinkBoundedEnum
+
+instance Arbitrary Word3 where
+  arbitrary = arbitraryBoundedEnum
+  shrink = shrinkBoundedEnum
 
 instance Arbitrary Word5 where
   arbitrary = arbitraryBoundedEnum

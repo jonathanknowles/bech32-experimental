@@ -4,13 +4,17 @@
 
 module Data.BitSeq
   ( BitSeq
+  , empty
   , all
   , any
   , length
   , repeat
   , singleton
   , fromList
+  , fromChunk
   , fromChunks
+  , takeChunkDeflate
+  , takeChunkInflate
   , toList
   , toChunksDeflate
   , toChunksInflate
@@ -25,6 +29,9 @@ import Prelude hiding (all, any, length, repeat, take)
 newtype BitSeq = BitSeq {unBitSeq :: [Bit]}
   deriving stock (Eq, Ord)
   deriving newtype (Monoid, Read, Semigroup, Show)
+
+empty :: BitSeq
+empty = BitSeq []
 
 singleton :: Bit -> BitSeq
 singleton b = BitSeq [b]

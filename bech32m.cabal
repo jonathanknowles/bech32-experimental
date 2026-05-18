@@ -40,6 +40,8 @@ library
       Codec.Bech32.Suffix.Payload
       Data.Bit
       Data.BitSeq
+      Data.Word2
+      Data.Word3
       Data.Word5
     other-modules:
       Codec.Bech32.Prefix.Char.Types
