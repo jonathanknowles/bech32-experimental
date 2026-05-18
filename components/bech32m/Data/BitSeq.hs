@@ -4,27 +4,31 @@
 
 module Data.BitSeq
   ( BitSeq
-  , empty
   , all
   , any
-  , length
-  , repeat
-  , singleton
-  , fromList
+  , drop
+  , empty
   , fromChunk
   , fromChunks
+  , fromList
+  , length
+  , null
+  , repeat
+  , singleton
+  , take
   , takeChunkDeflate
   , takeChunkInflate
-  , toList
   , toChunksDeflate
   , toChunksInflate
+  , toList
   )
 where
 
 import Data.Bit (Bit (B0, B1))
 import Data.Bits (Bits (setBit, testBit, zeroBits), FiniteBits (finiteBitSize))
 import Data.List qualified as List
-import Prelude hiding (all, any, length, repeat, take)
+import Prelude hiding (all, any, drop, length, null, repeat, take)
+import Prelude qualified
 
 newtype BitSeq = BitSeq {unBitSeq :: [Bit]}
   deriving stock (Eq, Ord)
@@ -33,11 +37,20 @@ newtype BitSeq = BitSeq {unBitSeq :: [Bit]}
 empty :: BitSeq
 empty = BitSeq []
 
+null :: BitSeq -> Bool
+null (BitSeq s) = Prelude.null s
+
 singleton :: Bit -> BitSeq
 singleton b = BitSeq [b]
 
 repeat :: Bit -> BitSeq
 repeat b = BitSeq (List.repeat b)
+
+drop :: Int -> BitSeq -> BitSeq
+drop n (BitSeq s) = BitSeq (Prelude.drop n s)
+
+take :: Int -> BitSeq -> BitSeq
+take n (BitSeq s) = BitSeq (Prelude.take n s)
 
 all :: (Bit -> Bool) -> BitSeq -> Bool
 all f = List.all f . toList
@@ -60,8 +73,21 @@ fromChunk a = fromList [a `getBit` i | i <- [0 .. finiteBitSize a - 1]]
 fromChunks :: FiniteBits a => [a] -> BitSeq
 fromChunks = fromList . concatMap (toList . fromChunk)
 
-takeChunkInflate :: forall a. FiniteBits a => Bit -> BitSeq -> (a, BitSeq)
-takeChunkInflate padding (BitSeq bits) = (chunk, BitSeq rest)
+takeChunkDeflate :: forall a. FiniteBits a => BitSeq -> Maybe (BitSeq, a)
+takeChunkDeflate (BitSeq bits)
+  | List.length prefix < w = Nothing
+  | otherwise = Just (BitSeq rest, chunk)
+  where
+    w = finiteBitSize (zeroBits :: a)
+    (prefix, rest) = List.splitAt w bits
+    chunk =
+      List.foldl'
+        (\acc (i, b) -> setBitFrom b i acc)
+        zeroBits
+        (zip [0 ..] prefix)
+
+takeChunkInflate :: forall a. FiniteBits a => Bit -> BitSeq -> (BitSeq, a)
+takeChunkInflate padding (BitSeq bits) = (BitSeq rest, chunk)
   where
     w = finiteBitSize (zeroBits :: a)
     (prefix, rest) = List.splitAt w bits
@@ -72,35 +98,22 @@ takeChunkInflate padding (BitSeq bits) = (chunk, BitSeq rest)
         zeroBits
         (zip [0 ..] padded)
 
-takeChunkDeflate :: forall a. FiniteBits a => BitSeq -> Maybe (a, BitSeq)
-takeChunkDeflate (BitSeq bits)
-  | List.length prefix < w = Nothing
-  | otherwise = Just (chunk, BitSeq rest)
-  where
-    w = finiteBitSize (zeroBits :: a)
-    (prefix, rest) = List.splitAt w bits
-    chunk =
-      List.foldl'
-        (\acc (i, b) -> setBitFrom b i acc)
-        zeroBits
-        (zip [0 ..] prefix)
-
-toChunksInflate :: forall a. FiniteBits a => Bit -> BitSeq -> [a]
-toChunksInflate padding (BitSeq bits) = go bits
-  where
-    go [] = []
-    go bs =
-      let (chunk, BitSeq rest) = takeChunkInflate padding (BitSeq bs)
-      in chunk : go rest
-
 toChunksDeflate :: forall a. FiniteBits a => BitSeq -> (BitSeq, [a])
 toChunksDeflate (BitSeq bits) = go bits []
   where
     go [] acc = (BitSeq [], reverse acc)
     go bs acc =
       case takeChunkDeflate (BitSeq bs) of
-        Just (chunk, BitSeq rest) -> go rest (chunk : acc)
+        Just (BitSeq rest, chunk) -> go rest (chunk : acc)
         Nothing -> (BitSeq bs, reverse acc)
+
+toChunksInflate :: forall a. FiniteBits a => Bit -> BitSeq -> [a]
+toChunksInflate padding (BitSeq bits) = go bits
+  where
+    go [] = []
+    go bs =
+      let (BitSeq rest, chunk) = takeChunkInflate padding (BitSeq bs)
+      in chunk : go rest
 
 --------------------------------------------------------------------------------
 -- Utilities
