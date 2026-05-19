@@ -14,6 +14,7 @@ module Data.BitSeq
   , length
   , null
   , repeat
+  , replicate
   , singleton
   , take
   , takeChunkDeflate
@@ -27,7 +28,7 @@ where
 import Data.Bit (Bit (B0, B1))
 import Data.Bits (Bits (setBit, testBit, zeroBits), FiniteBits (finiteBitSize))
 import Data.List qualified as List
-import Prelude hiding (all, any, drop, length, null, repeat, take)
+import Prelude hiding (all, any, drop, length, null, repeat, replicate, take)
 import Prelude qualified
 
 newtype BitSeq = BitSeq {unBitSeq :: [Bit]}
@@ -45,6 +46,9 @@ singleton b = BitSeq [b]
 
 repeat :: Bit -> BitSeq
 repeat b = BitSeq (List.repeat b)
+
+replicate :: Int -> Bit -> BitSeq
+replicate n b = BitSeq (Prelude.replicate n b)
 
 drop :: Int -> BitSeq -> BitSeq
 drop n (BitSeq s) = BitSeq (Prelude.drop n s)

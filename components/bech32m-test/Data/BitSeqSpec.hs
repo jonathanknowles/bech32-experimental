@@ -9,6 +9,7 @@ module Data.BitSeqSpec
   ( spec
   ) where
 
+import Data.Bifunctor (Bifunctor (second))
 import Data.Bit (Bit)
 import Data.BitSeq (BitSeq)
 import Data.BitSeq qualified as BitSeq
@@ -57,26 +58,26 @@ spec = do
 
   describe "fromList" $ do
     prop "prop_fromList_toList"
-      <+> prop_fromList_toList
+      \\\ prop_fromList_toList
 
   describe "takeChunkDeflate" $ do
     prop "prop_takeChunkDeflate_exact"
-      <+> prop_takeChunkDeflate_exact
+      \\\ prop_takeChunkDeflate_exact
     prop "prop_takeChunkDeflate_surplus"
-      <+> prop_takeChunkDeflate_surplus
+      \\\ prop_takeChunkDeflate_surplus
     prop "prop_takeChunkDeflate_deficit"
-      <+> prop_takeChunkDeflate_deficit
+      \\\ prop_takeChunkDeflate_deficit
 
   describe "takeChunkInflate" $ do
     prop "prop_takeChunkInflate_exact"
-      <+> prop_takeChunkInflate_exact
+      \\\ prop_takeChunkInflate_exact
     prop "prop_takeChunkInflate_surplus"
-      <+> prop_takeChunkInflate_surplus
+      \\\ prop_takeChunkInflate_surplus
     prop "prop_takeChunkInflate_deficit"
-      <+> prop_takeChunkInflate_deficit
+      \\\ prop_takeChunkInflate_deficit
 
-(<+>) :: (a -> b) -> a -> b
-(<+>) = ($)
+(\\\) :: (a -> b) -> a -> b
+(\\\) = ($)
 
 --------------------------------------------------------------------------------
 -- Utility types
@@ -164,14 +165,19 @@ prop_takeChunkInflate_surplus (ChunkType @chunkType) padding surplus =
       === (surplus, chunk)
 
 prop_takeChunkInflate_deficit :: ChunkType -> Bit -> Property
-prop_takeChunkInflate_deficit (ChunkType @chunkType) padding =
+prop_takeChunkInflate_deficit (ChunkType @chunkType) paddingBit =
   forAll (arbitrary @chunkType) $ \chunk ->
-    forAll (choose (0, width @chunkType - 1)) $ \bitsToTake ->
-      BitSeq.takeChunkInflate
-        @chunkType
-        padding
-        (BitSeq.take bitsToTake (BitSeq.fromChunk chunk))
-        === (BitSeq.empty, undefined)
+    forAll (choose (1, width @chunkType)) $ \paddingLength -> do
+      let prefixLength = width @chunkType - paddingLength
+      let prefix = BitSeq.take prefixLength (BitSeq.fromChunk chunk)
+      let padding = BitSeq.replicate paddingLength paddingBit
+      let result = BitSeq.takeChunkInflate @chunkType paddingBit prefix
+      second BitSeq.fromChunk result
+        === (BitSeq.empty, prefix <> padding)
+
+--------------------------------------------------------------------------------
+-- Properties: fromList
+--------------------------------------------------------------------------------
 
 prop_fromList_toList :: [Bit] -> Property
 prop_fromList_toList bits =
