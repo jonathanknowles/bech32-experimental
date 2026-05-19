@@ -30,6 +30,7 @@ import Test.QuickCheck
   , choose
   , elements
   , forAll
+  , listOf
   , shrinkBoundedEnum
   , shrinkMap
   , (===)
@@ -75,6 +76,22 @@ spec = do
       \\\ prop_takeChunkInflate_surplus
     prop "prop_takeChunkInflate_deficit"
       \\\ prop_takeChunkInflate_deficit
+
+  describe "toChunksDeflate" $ do
+    prop "prop_toChunksDeflate_roundTrip"
+      \\\ prop_toChunksDeflate_roundTrip
+    prop "prop_toChunksDeflate_remainder"
+      \\\ prop_toChunksDeflate_remainder
+    prop "prop_toChunksDeflate_exact"
+      \\\ prop_toChunksDeflate_exact
+
+  describe "toChunksInflate" $ do
+    prop "prop_toChunksInflate_prefix"
+      \\\ prop_toChunksInflate_prefix
+    prop "prop_toChunksInflate_padding"
+      \\\ prop_toChunksInflate_padding
+    prop "prop_toChunksInflate_exact"
+      \\\ prop_toChunksInflate_exact
 
 (\\\) :: (a -> b) -> a -> b
 (\\\) = ($)
@@ -174,6 +191,56 @@ prop_takeChunkInflate_deficit (ChunkType @chunkType) paddingBit =
       let result = BitSeq.takeChunkInflate @chunkType paddingBit prefix
       second BitSeq.fromChunk result
         === (BitSeq.empty, prefix <> padding)
+
+--------------------------------------------------------------------------------
+-- Properties: toChunksDeflate
+--------------------------------------------------------------------------------
+
+-- The chunks and remainder reconstruct the original sequence.
+prop_toChunksDeflate_roundTrip :: ChunkType -> BitSeq -> Property
+prop_toChunksDeflate_roundTrip (ChunkType @chunkType) bitSeq = do
+  let (remainder, chunks) = BitSeq.toChunksDeflate @chunkType bitSeq
+  BitSeq.fromChunks chunks <> remainder === bitSeq
+
+-- The remainder is minimal: the sequence cannot yield another chunk.
+prop_toChunksDeflate_remainder :: ChunkType -> BitSeq -> Property
+prop_toChunksDeflate_remainder (ChunkType @chunkType) bitSeq = do
+  let (remainder, _) = BitSeq.toChunksDeflate @chunkType bitSeq
+  BitSeq.length remainder `compare` width @chunkType === LT
+
+-- When the chunk width exactly divides the sequence, the remainder is empty.
+prop_toChunksDeflate_exact :: ChunkType -> Property
+prop_toChunksDeflate_exact (ChunkType @chunkType) =
+  forAll (listOf (arbitrary @chunkType)) $ \chunks ->
+    fst (BitSeq.toChunksDeflate @chunkType (foldMap BitSeq.fromChunk chunks))
+      === BitSeq.empty
+
+--------------------------------------------------------------------------------
+-- Properties: toChunksInflate
+--------------------------------------------------------------------------------
+
+-- The original sequence is a prefix of the coalesced chunks.
+prop_toChunksInflate_prefix :: ChunkType -> Bit -> BitSeq -> Property
+prop_toChunksInflate_prefix (ChunkType @chunkType) paddingBit bitSeq = do
+  let chunks = BitSeq.toChunksInflate @chunkType paddingBit bitSeq
+  BitSeq.take (BitSeq.length bitSeq) (BitSeq.fromChunks chunks)
+    === bitSeq
+
+-- The padding bits extend the remainder to a chunk boundary.
+prop_toChunksInflate_padding :: ChunkType -> Bit -> BitSeq -> Property
+prop_toChunksInflate_padding (ChunkType @chunkType) paddingBit bitSeq = do
+  let chunks = BitSeq.toChunksInflate @chunkType paddingBit bitSeq
+  let paddingLength = negate (BitSeq.length bitSeq) `mod` width @chunkType
+  BitSeq.drop (BitSeq.length bitSeq) (BitSeq.fromChunks chunks)
+    === BitSeq.replicate paddingLength paddingBit
+
+-- When the chunk width exactly divides the sequence, there is no padding.
+prop_toChunksInflate_exact :: ChunkType -> Bit -> Property
+prop_toChunksInflate_exact (ChunkType @chunkType) paddingBit =
+  forAll (listOf (arbitrary @chunkType)) $ \chunksIn -> do
+    let bitSeq = BitSeq.fromChunks chunksIn
+    BitSeq.fromChunks (BitSeq.toChunksInflate @chunkType paddingBit bitSeq)
+      === bitSeq
 
 --------------------------------------------------------------------------------
 -- Properties: fromList

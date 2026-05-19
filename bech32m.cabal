@@ -47,12 +47,14 @@ library
       Codec.Bech32.Prefix.Char.Types
       Codec.Bech32.Utilities
     -- other-extensions:
-    build-depends:    base
-                    , containers
-                    , finitary
-                    , nonempty-containers
-                    , text
-                    , vector-sized
+    build-depends:
+      , base
+      , containers
+      , finitary
+      , monoid-subclasses
+      , nonempty-containers
+      , text
+      , vector-sized
     hs-source-dirs:   components/bech32m
     default-language: Haskell2010
 
@@ -73,6 +75,7 @@ test-suite bech32m-test
     , finitary
     , hspec
     , hspec-quickcheck-classes
+    , monoid-subclasses
     , QuickCheck
     , quickcheck-classes
   build-tool-depends:

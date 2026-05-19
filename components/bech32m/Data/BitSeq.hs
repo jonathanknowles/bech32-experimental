@@ -28,12 +28,20 @@ where
 import Data.Bit (Bit (B0, B1))
 import Data.Bits (Bits (setBit, testBit, zeroBits), FiniteBits (finiteBitSize))
 import Data.List qualified as List
+import Data.Semigroup.Cancellative (LeftReductive, RightReductive)
 import Prelude hiding (all, any, drop, length, null, repeat, replicate, take)
 import Prelude qualified
 
 newtype BitSeq = BitSeq {unBitSeq :: [Bit]}
   deriving stock (Eq, Ord)
-  deriving newtype (Monoid, Read, Semigroup, Show)
+  deriving newtype
+    ( LeftReductive
+    , Monoid
+    , Read
+    , RightReductive
+    , Semigroup
+    , Show
+    )
 
 empty :: BitSeq
 empty = BitSeq []
