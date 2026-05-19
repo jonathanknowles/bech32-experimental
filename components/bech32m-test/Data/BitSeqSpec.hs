@@ -145,18 +145,21 @@ instance Arbitrary Word5 where
 -- Properties: takeChunkDeflate
 --------------------------------------------------------------------------------
 
+-- When the sequence is exactly one chunk in length, there is no remainder.
 prop_takeChunkDeflate_exact :: ChunkType -> Property
 prop_takeChunkDeflate_exact (ChunkType @chunkType) =
   forAll (arbitrary @chunkType) $ \chunk ->
     BitSeq.takeChunkDeflate (BitSeq.fromChunk chunk)
       === Just (BitSeq.empty, chunk)
 
+-- When the sequence is longer than one chunk, the remainder is returned.
 prop_takeChunkDeflate_surplus :: ChunkType -> BitSeq -> Property
 prop_takeChunkDeflate_surplus (ChunkType @chunkType) surplus =
   forAll (arbitrary @chunkType) $ \chunk ->
     BitSeq.takeChunkDeflate (BitSeq.fromChunk chunk <> surplus)
       === Just (surplus, chunk)
 
+-- When the sequence is shorter than one chunk, nothing is returned.
 prop_takeChunkDeflate_deficit :: ChunkType -> Property
 prop_takeChunkDeflate_deficit (ChunkType @chunkType) =
   forAll (arbitrary @chunkType) $ \chunk ->
