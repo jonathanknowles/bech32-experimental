@@ -54,9 +54,11 @@ spec = do
     , monoidLaws
     , semigroupMonoidLaws
     ]
+
   describe "fromList" $ do
     prop "prop_fromList_toList"
       <+> prop_fromList_toList
+
   describe "takeChunkDeflate" $ do
     prop "prop_takeChunkDeflate_exact"
       <+> prop_takeChunkDeflate_exact
@@ -64,6 +66,7 @@ spec = do
       <+> prop_takeChunkDeflate_surplus
     prop "prop_takeChunkDeflate_deficit"
       <+> prop_takeChunkDeflate_deficit
+
   describe "takeChunkInflate" $ do
     prop "prop_takeChunkInflate_exact"
       <+> prop_takeChunkInflate_exact
