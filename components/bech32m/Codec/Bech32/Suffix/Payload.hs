@@ -20,6 +20,7 @@ module Codec.Bech32.Suffix.Payload
   , fromText
   , toText
   , length
+  , PaddingError (..)
   )
 where
 
@@ -33,6 +34,7 @@ import Data.BitSeq qualified as BitSeq
 import Data.Bits (FiniteBits)
 import Data.Foldable qualified as Foldable
 import Data.Kind (Constraint)
+import Data.List qualified as List
 import Data.Proxy (Proxy (Proxy))
 import Data.Sequence (Seq)
 import Data.Sequence qualified as Seq
@@ -82,12 +84,21 @@ toWord5List (Payload words) = Foldable.toList words
 fromWord8List :: [Word8] -> Payload
 fromWord8List = fromWord5List . resliceInflate BitOrder.FromMSBToLSB B0
 
-toWord8List :: Payload -> Maybe [Word8]
-toWord8List ws
-  | B1 `elem` remainder = Nothing
-  | otherwise = Just result
+data PaddingError
+  = PaddingTooLong
+  | PaddingNonZero
+  deriving (Eq, Ord, Show)
+
+toWord8List :: Payload -> Either PaddingError [Word8]
+toWord8List p
+  | List.length padding > 4 =
+      Left PaddingTooLong
+  | B1 `elem` padding =
+      Left PaddingNonZero
+  | otherwise =
+      Right result
   where
-    (remainder, result) = resliceDeflate BitOrder.FromMSBToLSB (toWord5List ws)
+    (padding, result) = resliceDeflate BitOrder.FromMSBToLSB (toWord5List p)
 
 -- | Constructs a 'Payload' from a type-level textual symbol.
 --

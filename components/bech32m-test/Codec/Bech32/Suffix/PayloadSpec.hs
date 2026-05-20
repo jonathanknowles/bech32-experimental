@@ -9,9 +9,12 @@ module Codec.Bech32.Suffix.PayloadSpec
   ( spec
   ) where
 
-import Codec.Bech32.Suffix.Payload (Payload)
+import Codec.Bech32.Suffix.Payload
+  ( PaddingError (PaddingNonZero, PaddingTooLong)
+  , Payload
+  )
 import Codec.Bech32.Suffix.Payload qualified as Payload
-import Data.Bit (Bit (B0))
+import Data.Bit (Bit (B1))
 import Data.BitOrder qualified as BitOrder
 import Data.BitSeq qualified as BitSeq
 import Data.Word (Word8)
@@ -95,7 +98,7 @@ prop_fromWord5List_toWord5List ws =
 
 prop_fromWord8List_toWord8List :: [Word8] -> Property
 prop_fromWord8List_toWord8List ws =
-  Payload.toWord8List (Payload.fromWord8List ws) === Just ws
+  Payload.toWord8List (Payload.fromWord8List ws) === Right ws
 
 prop_toText_fromText :: Payload -> Property
 prop_toText_fromText p =
@@ -112,11 +115,29 @@ prop_toWord5List_fromWord5List p =
 
 prop_toWord8List_fromWord8List :: Payload -> Property
 prop_toWord8List_fromWord8List p
-  | BitSeq.all (== B0) padding =
-    fmap Payload.fromWord8List (Payload.toWord8List p) === Just p
+  | paddingLength > 4 =
+      Payload.toWord8List p === Left PaddingTooLong
+  | BitSeq.any (== B1) padding =
+      Payload.toWord8List p === Left PaddingNonZero
   | otherwise =
-    Payload.toWord8List p === Nothing
+      fmap Payload.fromWord8List (Payload.toWord8List p) === Right p
   where
+    paddingLength = (Payload.length p * 5) `mod` 8
     padding = BitSeq.drop (BitSeq.length bitSeq - paddingLength) bitSeq
-    paddingLength = BitSeq.length bitSeq `mod` 8
     bitSeq = BitSeq.fromChunks BitOrder.FromMSBToLSB $ Payload.toWord5List p
+
+-- Padding is too long if (Payload.length p `mod` 8) `elem` [1, 3, 6]
+--
+-- Word8 count | Word5 count | Padding bits
+--
+--  0             0            0
+--  1             2            2
+--  2             4            4
+--  3             5            1
+--  4             7            3
+--  5             8            0
+--  6            10            2
+--  7            12            4
+--  8            13            1
+--  9            15            3
+-- 10            16            0
