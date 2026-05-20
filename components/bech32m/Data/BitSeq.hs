@@ -4,7 +4,6 @@
 
 module Data.BitSeq
   ( BitSeq
-  , BitOrder (..)
   , all
   , any
   , drop
@@ -26,6 +25,7 @@ module Data.BitSeq
   )
 where
 
+import Data.BitOrder (BitOrder (..))
 import Data.Bit (Bit (B0, B1))
 import Data.Bits (Bits (setBit, testBit, zeroBits), FiniteBits (finiteBitSize))
 import Data.List qualified as List
@@ -79,14 +79,6 @@ fromList = BitSeq
 
 toList :: BitSeq -> [Bit]
 toList = unBitSeq
-
--- Move to separate module.
--- BitOrder.FromLeastToMostSignificant?
--- BitOrder.FromMostToLeastSignificant?
-data BitOrder
-  = FromLSBToMSB
-  | FromMSBToLSB
-  deriving stock (Bounded, Enum, Eq, Ord, Show)
 
 fromChunk :: FiniteBits a => BitOrder -> a -> BitSeq
 fromChunk bitOrder a = fromList [a `getBit` i | i <- indices]

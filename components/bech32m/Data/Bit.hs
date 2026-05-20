@@ -25,9 +25,16 @@ import Data.Bits
   )
 import Data.Ix (Ix)
 import GHC.Generics (Generic)
+import Text.Read (Read (readPrec))
 
 data Bit = B0 | B1
-  deriving (Bounded, Enum, Eq, Generic, Ix, Ord, Read, Show)
+  deriving (Bounded, Enum, Eq, Generic, Ix, Ord)
+
+instance Read Bit where
+  readPrec = fromInteger <$> readPrec
+
+instance Show Bit where
+  show = show . fromEnum
 
 instance Num Bit where
   abs = id

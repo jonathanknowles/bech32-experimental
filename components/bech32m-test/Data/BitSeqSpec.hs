@@ -61,9 +61,6 @@ spec = do
     prop "prop_fromList_toList"
       \\\ prop_fromList_toList
 
-  -- TODO:
-  -- Little-endianness
-
   describe "takeChunkDeflate" $ do
     prop "prop_takeChunkDeflate_exact"
       \\\ prop_takeChunkDeflate_exact

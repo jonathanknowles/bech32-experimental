@@ -39,6 +39,7 @@ library
       Codec.Bech32.Suffix.Checksum
       Codec.Bech32.Suffix.Payload
       Data.Bit
+      Data.BitOrder
       Data.BitSeq
       Data.Word2
       Data.Word3

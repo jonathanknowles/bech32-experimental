@@ -27,7 +27,8 @@ import Codec.Bech32.Suffix.Char qualified as SuffixChar
 import Codec.Bech32.Utilities (InvalidCharError, fromRight, maybeToEither)
 import Data.Bifunctor (Bifunctor (first))
 import Data.Bit (Bit (B0, B1))
-import Data.BitSeq (BitOrder (FromLSBToMSB))
+import Data.BitOrder (BitOrder)
+import Data.BitOrder qualified as BitOrder
 import Data.BitSeq qualified as BitSeq
 import Data.Bits (FiniteBits)
 import Data.Foldable qualified as Foldable
@@ -79,14 +80,14 @@ toWord5List :: Payload -> [Word5]
 toWord5List (Payload words) = Foldable.toList words
 
 fromWord8List :: [Word8] -> Payload
-fromWord8List = fromWord5List . resliceInflate B0
+fromWord8List = fromWord5List . resliceInflate BitOrder.FromMSBToLSB B0
 
 toWord8List :: Payload -> Maybe [Word8]
 toWord8List ws
   | B1 `elem` remainder = Nothing
   | otherwise = Just result
   where
-    (remainder, result) = resliceDeflate (toWord5List ws)
+    (remainder, result) = resliceDeflate BitOrder.FromMSBToLSB (toWord5List ws)
 
 -- | Constructs a 'Payload' from a type-level textual symbol.
 --
@@ -176,15 +177,14 @@ toText (Payload words) =
 -- Utilities
 --------------------------------------------------------------------------------
 
-bitOrder :: BitOrder
-bitOrder = FromLSBToMSB
-
-resliceInflate :: (FiniteBits a, FiniteBits b) => Bit -> [a] -> [b]
-resliceInflate padding =
+resliceInflate
+  :: (FiniteBits a, FiniteBits b) => BitOrder -> Bit -> [a] -> [b]
+resliceInflate bitOrder padding =
   BitSeq.toChunksInflate bitOrder padding . BitSeq.fromChunks bitOrder
 
-resliceDeflate :: (FiniteBits a, FiniteBits b) => [a] -> ([Bit], [b])
-resliceDeflate =
+resliceDeflate
+  :: (FiniteBits a, FiniteBits b) => BitOrder -> [a] -> ([Bit], [b])
+resliceDeflate bitOrder =
   first BitSeq.toList
     . BitSeq.toChunksDeflate bitOrder
     . BitSeq.fromChunks bitOrder
