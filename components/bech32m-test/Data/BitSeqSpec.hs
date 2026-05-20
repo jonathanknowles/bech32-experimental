@@ -11,7 +11,8 @@ module Data.BitSeqSpec
 
 import Data.Bifunctor (Bifunctor (second))
 import Data.Bit (Bit)
-import Data.BitSeq (BitOrder (..), BitSeq)
+import Data.BitOrder (BitOrder)
+import Data.BitSeq (BitSeq)
 import Data.BitSeq qualified as BitSeq
 import Data.Bits (FiniteBits (finiteBitSize))
 import Data.Data (Proxy (Proxy))

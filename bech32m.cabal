@@ -65,6 +65,7 @@ test-suite bech32m-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Codec.Bech32.Suffix.PayloadSpec
       Data.BitSeqSpec
       OtherSpec
   hs-source-dirs:

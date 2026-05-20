@@ -13,11 +13,10 @@ import Codec.Bech32.Suffix.Payload (Payload)
 import Codec.Bech32.Suffix.Payload qualified as Payload
 import Data.Bit (Bit)
 import Data.List.NonEmpty (NonEmpty)
-import Data.Word (Word8)
 import Data.Word2 (Word2)
 import Data.Word3 (Word3)
 import Data.Word5 (Word5)
-import Test.Hspec (describe, it, Spec)
+import Test.Hspec (Spec, describe, it)
 import Test.Hspec.QuickCheck.Classes (testLaws)
 import Test.QuickCheck
   ( Arbitrary (arbitrary, shrink)
@@ -34,11 +33,9 @@ import Test.QuickCheck.Classes
   , boundedEnumLaws
   , eqLaws
   , ixLaws
-  , monoidLaws
   , numLaws
   , ordLaws
   , semigroupLaws
-  , semigroupMonoidLaws
   , showLaws
   , showReadLaws
   )
@@ -61,15 +58,6 @@ spec = do
       , eqLaws
       , ixLaws
       , ordLaws
-      , showLaws
-      , showReadLaws
-      ]
-    testLaws @Payload
-      [ eqLaws
-      , monoidLaws
-      , ordLaws
-      , semigroupLaws
-      , semigroupMonoidLaws
       , showLaws
       , showReadLaws
       ]
@@ -119,25 +107,6 @@ spec = do
       , showReadLaws
       ]
   describe "Properties" $ do
-    describe "Payload" $ do
-      it "prop_Payload_append_fromWord5List" $
-        property
-          prop_Payload_append_fromWord5List
-      it "prop_Payload_append_toWord5List" $
-        property
-          prop_Payload_append_toWord5List
-      it "prop_Payload_toText_fromText" $
-        property
-          prop_Payload_toText_fromText
-      it "prop_Payload_toWord5List_fromWord5List" $
-        property
-          prop_Payload_toWord5List_fromWord5List
-      it "prop_Payload_fromWord5List_toWord5List" $
-        property
-          prop_Payload_fromWord5List_toWord5List
-      it "prop_Payload_fromWord8List_toWord8List" $
-        property
-          prop_Payload_fromWord8List_toWord8List
     describe "PrefixChar" $ do
       it "prop_PrefixChar_toChar_fromCharMaybe" $
         property
@@ -207,36 +176,6 @@ instance Arbitrary Word3 where
 instance Arbitrary Word5 where
   arbitrary = arbitraryBoundedEnum
   shrink = shrinkBoundedEnum
-
---------------------------------------------------------------------------------
--- Properties for Payload
---------------------------------------------------------------------------------
-
-prop_Payload_append_fromWord5List :: [Word5] -> [Word5] -> Property
-prop_Payload_append_fromWord5List ps qs =
-  Payload.fromWord5List (ps <> qs)
-    === (Payload.fromWord5List ps <> Payload.fromWord5List qs)
-
-prop_Payload_append_toWord5List :: Payload -> Payload -> Property
-prop_Payload_append_toWord5List p q =
-  Payload.toWord5List (p <> q)
-    === (Payload.toWord5List p <> Payload.toWord5List q)
-
-prop_Payload_toText_fromText :: Payload -> Property
-prop_Payload_toText_fromText d =
-  Payload.fromText (Payload.toText d) === Right d
-
-prop_Payload_toWord5List_fromWord5List :: Payload -> Property
-prop_Payload_toWord5List_fromWord5List d =
-  Payload.fromWord5List (Payload.toWord5List d) === d
-
-prop_Payload_fromWord5List_toWord5List :: [Word5] -> Property
-prop_Payload_fromWord5List_toWord5List ws =
-  Payload.toWord5List (Payload.fromWord5List ws) === ws
-
-prop_Payload_fromWord8List_toWord8List :: [Word8] -> Property
-prop_Payload_fromWord8List_toWord8List ws =
-  Payload.toWord8List (Payload.fromWord8List ws) === Just ws
 
 --------------------------------------------------------------------------------
 -- Properties for PrefixChar
