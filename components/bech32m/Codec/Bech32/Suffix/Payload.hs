@@ -27,6 +27,7 @@ import Codec.Bech32.Suffix.Char qualified as SuffixChar
 import Codec.Bech32.Utilities (InvalidCharError, fromRight, maybeToEither)
 import Data.Bifunctor (Bifunctor (first))
 import Data.Bit (Bit (B0, B1))
+import Data.BitSeq (BitOrder (FromLSBToMSB))
 import Data.BitSeq qualified as BitSeq
 import Data.Bits (FiniteBits)
 import Data.Foldable qualified as Foldable
@@ -44,7 +45,6 @@ import GHC.TypeNats (Nat)
 import Numeric.Natural (Natural)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude hiding (length, words)
-import Data.BitSeq (ChunkBitOrder(FromLSBToMSB))
 
 -- $setup
 -- >>> :set -XDataKinds
@@ -176,10 +176,15 @@ toText (Payload words) =
 -- Utilities
 --------------------------------------------------------------------------------
 
+bitOrder :: BitOrder
+bitOrder = FromLSBToMSB
+
 resliceInflate :: (FiniteBits a, FiniteBits b) => Bit -> [a] -> [b]
 resliceInflate padding =
-  BitSeq.toChunksInflate padding . BitSeq.fromChunks FromLSBToMSB
+  BitSeq.toChunksInflate bitOrder padding . BitSeq.fromChunks bitOrder
 
 resliceDeflate :: (FiniteBits a, FiniteBits b) => [a] -> ([Bit], [b])
 resliceDeflate =
-  first BitSeq.toList . BitSeq.toChunksDeflate . BitSeq.fromChunks FromLSBToMSB
+  first BitSeq.toList
+    . BitSeq.toChunksDeflate bitOrder
+    . BitSeq.fromChunks bitOrder

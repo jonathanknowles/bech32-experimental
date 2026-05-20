@@ -4,7 +4,7 @@
 
 module Data.BitSeq
   ( BitSeq
-  , ChunkBitOrder (..)
+  , BitOrder (..)
   , all
   , any
   , drop
@@ -80,11 +80,15 @@ fromList = BitSeq
 toList :: BitSeq -> [Bit]
 toList = unBitSeq
 
-data ChunkBitOrder
+-- Move to separate module.
+-- BitOrder.FromLeastToMostSignificant?
+-- BitOrder.FromMostToLeastSignificant?
+data BitOrder
   = FromLSBToMSB
   | FromMSBToLSB
+  deriving stock (Bounded, Enum, Eq, Ord, Show)
 
-fromChunk :: FiniteBits a => ChunkBitOrder -> a -> BitSeq
+fromChunk :: FiniteBits a => BitOrder -> a -> BitSeq
 fromChunk bitOrder a = fromList [a `getBit` i | i <- indices]
   where
     indices = case bitOrder of
@@ -93,49 +97,57 @@ fromChunk bitOrder a = fromList [a `getBit` i | i <- indices]
     lsb = 0
     msb = finiteBitSize a - 1
 
-fromChunks :: FiniteBits a => ChunkBitOrder -> [a] -> BitSeq
+fromChunks :: FiniteBits a => BitOrder -> [a] -> BitSeq
 fromChunks bitOrder = fromList . concatMap (toList . fromChunk bitOrder)
 
-takeChunkDeflate :: forall a. FiniteBits a => BitSeq -> Maybe (BitSeq, a)
-takeChunkDeflate (BitSeq bits)
+takeChunkDeflate
+  :: forall a. FiniteBits a => BitOrder -> BitSeq -> Maybe (BitSeq, a)
+takeChunkDeflate bitOrder (BitSeq bits)
   | List.length prefix < w = Nothing
   | otherwise = Just (BitSeq rest, chunk)
   where
     w = finiteBitSize (zeroBits :: a)
     (prefix, rest) = List.splitAt w bits
+    indices = case bitOrder of
+      FromLSBToMSB -> [0 .. w - 1]
+      FromMSBToLSB -> [w - 1, w - 2 .. 0]
     chunk =
       List.foldl'
         (\acc (i, b) -> setBitFrom b i acc)
         zeroBits
-        (zip [0 ..] prefix)
+        (zip indices prefix)
 
-takeChunkInflate :: forall a. FiniteBits a => Bit -> BitSeq -> (BitSeq, a)
-takeChunkInflate padding (BitSeq bits) = (BitSeq rest, chunk)
+takeChunkInflate
+  :: forall a. FiniteBits a => BitOrder -> Bit -> BitSeq -> (BitSeq, a)
+takeChunkInflate bitOrder padding (BitSeq bits) = (BitSeq rest, chunk)
   where
     w = finiteBitSize (zeroBits :: a)
     (prefix, rest) = List.splitAt w bits
     padded = prefix ++ List.replicate (w - List.length prefix) padding
+    indices = case bitOrder of
+      FromLSBToMSB -> [0 .. w - 1]
+      FromMSBToLSB -> [w - 1, w - 2 .. 0]
     chunk =
       List.foldl'
         (\acc (i, b) -> setBitFrom b i acc)
         zeroBits
-        (zip [0 ..] padded)
+        (zip indices padded)
 
-toChunksDeflate :: forall a. FiniteBits a => BitSeq -> (BitSeq, [a])
-toChunksDeflate (BitSeq bits) = go bits []
+toChunksDeflate :: forall a. FiniteBits a => BitOrder -> BitSeq -> (BitSeq, [a])
+toChunksDeflate bitOrder (BitSeq bits) = go bits []
   where
     go [] acc = (BitSeq [], reverse acc)
     go bs acc =
-      case takeChunkDeflate (BitSeq bs) of
+      case takeChunkDeflate bitOrder (BitSeq bs) of
         Just (BitSeq rest, chunk) -> go rest (chunk : acc)
         Nothing -> (BitSeq bs, reverse acc)
 
-toChunksInflate :: forall a. FiniteBits a => Bit -> BitSeq -> [a]
-toChunksInflate padding (BitSeq bits) = go bits
+toChunksInflate :: forall a. FiniteBits a => BitOrder -> Bit -> BitSeq -> [a]
+toChunksInflate bitOrder padding (BitSeq bits) = go bits
   where
     go [] = []
     go bs =
-      let (BitSeq rest, chunk) = takeChunkInflate padding (BitSeq bs)
+      let (BitSeq rest, chunk) = takeChunkInflate bitOrder padding (BitSeq bs)
       in chunk : go rest
 
 --------------------------------------------------------------------------------
