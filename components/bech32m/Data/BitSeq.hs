@@ -4,6 +4,7 @@
 
 module Data.BitSeq
   ( BitSeq
+  , ChunkBitOrder (..)
   , all
   , any
   , drop
@@ -79,11 +80,21 @@ fromList = BitSeq
 toList :: BitSeq -> [Bit]
 toList = unBitSeq
 
-fromChunk :: FiniteBits a => a -> BitSeq
-fromChunk a = fromList [a `getBit` i | i <- [0 .. finiteBitSize a - 1]]
+data ChunkBitOrder
+  = FromLSBToMSB
+  | FromMSBToLSB
 
-fromChunks :: FiniteBits a => [a] -> BitSeq
-fromChunks = fromList . concatMap (toList . fromChunk)
+fromChunk :: FiniteBits a => ChunkBitOrder -> a -> BitSeq
+fromChunk bitOrder a = fromList [a `getBit` i | i <- indices]
+  where
+    indices = case bitOrder of
+      FromLSBToMSB -> [lsb, lsb + 1 .. msb]
+      FromMSBToLSB -> [msb, msb - 1 .. lsb]
+    lsb = 0
+    msb = finiteBitSize a - 1
+
+fromChunks :: FiniteBits a => ChunkBitOrder -> [a] -> BitSeq
+fromChunks bitOrder = fromList . concatMap (toList . fromChunk bitOrder)
 
 takeChunkDeflate :: forall a. FiniteBits a => BitSeq -> Maybe (BitSeq, a)
 takeChunkDeflate (BitSeq bits)

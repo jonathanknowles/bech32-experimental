@@ -44,6 +44,7 @@ import GHC.TypeNats (Nat)
 import Numeric.Natural (Natural)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude hiding (length, words)
+import Data.BitSeq (ChunkBitOrder(FromLSBToMSB))
 
 -- $setup
 -- >>> :set -XDataKinds
@@ -177,8 +178,8 @@ toText (Payload words) =
 
 resliceInflate :: (FiniteBits a, FiniteBits b) => Bit -> [a] -> [b]
 resliceInflate padding =
-  BitSeq.toChunksInflate padding . BitSeq.fromChunks
+  BitSeq.toChunksInflate padding . BitSeq.fromChunks FromLSBToMSB
 
 resliceDeflate :: (FiniteBits a, FiniteBits b) => [a] -> ([Bit], [b])
 resliceDeflate =
-  first BitSeq.toList . BitSeq.toChunksDeflate . BitSeq.fromChunks
+  first BitSeq.toList . BitSeq.toChunksDeflate . BitSeq.fromChunks FromLSBToMSB

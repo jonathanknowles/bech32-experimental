@@ -11,7 +11,7 @@ module Data.BitSeqSpec
 
 import Data.Bifunctor (Bifunctor (second))
 import Data.Bit (Bit)
-import Data.BitSeq (BitSeq)
+import Data.BitSeq (BitSeq, ChunkBitOrder (FromLSBToMSB))
 import Data.BitSeq qualified as BitSeq
 import Data.Bits (FiniteBits (finiteBitSize))
 import Data.Data (Proxy (Proxy))
@@ -120,6 +120,10 @@ instance Arbitrary ChunkType where
       , ChunkType @Word32
       ]
 
+-- TODO: Remove
+chunkBitOrder :: ChunkBitOrder
+chunkBitOrder = FromLSBToMSB
+
 --------------------------------------------------------------------------------
 -- Arbitrary instances
 --------------------------------------------------------------------------------
@@ -152,14 +156,14 @@ instance Arbitrary Word5 where
 prop_takeChunkDeflate_exact :: ChunkType -> Property
 prop_takeChunkDeflate_exact (ChunkType @chunkType) =
   forAll (arbitrary @chunkType) $ \chunk ->
-    BitSeq.takeChunkDeflate (BitSeq.fromChunk chunk)
+    BitSeq.takeChunkDeflate (BitSeq.fromChunk chunkBitOrder chunk)
       === Just (BitSeq.empty, chunk)
 
 -- A sequence longer than one chunk yields a chunk and just the remaining bits.
 prop_takeChunkDeflate_surplus :: ChunkType -> BitSeq -> Property
 prop_takeChunkDeflate_surplus (ChunkType @chunkType) surplus =
   forAll (arbitrary @chunkType) $ \chunk ->
-    BitSeq.takeChunkDeflate (BitSeq.fromChunk chunk <> surplus)
+    BitSeq.takeChunkDeflate (BitSeq.fromChunk chunkBitOrder chunk <> surplus)
       === Just (surplus, chunk)
 
 -- A sequence shorter than one chunk yields nothing.
@@ -168,7 +172,7 @@ prop_takeChunkDeflate_deficit (ChunkType @chunkType) =
   forAll (arbitrary @chunkType) $ \chunk ->
     forAll (choose (0, width @chunkType - 1)) $ \bitsToTake ->
       BitSeq.takeChunkDeflate @chunkType
-        (BitSeq.take bitsToTake (BitSeq.fromChunk chunk))
+        (BitSeq.take bitsToTake (BitSeq.fromChunk chunkBitOrder chunk))
         === Nothing
 
 --------------------------------------------------------------------------------
@@ -179,15 +183,16 @@ prop_takeChunkDeflate_deficit (ChunkType @chunkType) =
 prop_takeChunkInflate_exact :: ChunkType -> Bit -> Property
 prop_takeChunkInflate_exact (ChunkType @chunkType) padding =
   forAll (arbitrary @chunkType) $ \chunk ->
-    BitSeq.takeChunkInflate padding (BitSeq.fromChunk chunk)
+    BitSeq.takeChunkInflate padding (BitSeq.fromChunk chunkBitOrder chunk)
       === (BitSeq.empty, chunk)
 
 -- A sequence longer than one chunk yields a chunk and just the remaining bits.
 prop_takeChunkInflate_surplus :: ChunkType -> Bit -> BitSeq -> Property
 prop_takeChunkInflate_surplus (ChunkType @chunkType) padding surplus =
   forAll (arbitrary @chunkType) $ \chunk ->
-    BitSeq.takeChunkInflate padding (BitSeq.fromChunk chunk <> surplus)
-      === (surplus, chunk)
+    BitSeq.takeChunkInflate padding
+      (BitSeq.fromChunk chunkBitOrder chunk <> surplus)
+        === (surplus, chunk)
 
 -- A sequence shorter than one chunk yields a padded chunk.
 prop_takeChunkInflate_deficit :: ChunkType -> Bit -> Property
@@ -195,10 +200,11 @@ prop_takeChunkInflate_deficit (ChunkType @chunkType) paddingBit =
   forAll (arbitrary @chunkType) $ \chunk ->
     forAll (choose (1, width @chunkType)) $ \paddingLength -> do
       let prefixLength = width @chunkType - paddingLength
-      let prefix = BitSeq.take prefixLength (BitSeq.fromChunk chunk)
+      let prefix = BitSeq.take prefixLength
+            (BitSeq.fromChunk chunkBitOrder chunk)
       let padding = BitSeq.replicate paddingLength paddingBit
       let result = BitSeq.takeChunkInflate @chunkType paddingBit prefix
-      second BitSeq.fromChunk result
+      second (BitSeq.fromChunk chunkBitOrder) result
         === (BitSeq.empty, prefix <> padding)
 
 --------------------------------------------------------------------------------
@@ -209,7 +215,7 @@ prop_takeChunkInflate_deficit (ChunkType @chunkType) paddingBit =
 prop_toChunksDeflate_roundTrip :: ChunkType -> BitSeq -> Property
 prop_toChunksDeflate_roundTrip (ChunkType @chunkType) bitSeq = do
   let (remainder, chunks) = BitSeq.toChunksDeflate @chunkType bitSeq
-  BitSeq.fromChunks chunks <> remainder === bitSeq
+  BitSeq.fromChunks chunkBitOrder chunks <> remainder === bitSeq
 
 -- The remainder is minimal: the sequence cannot yield another chunk.
 prop_toChunksDeflate_remainder :: ChunkType -> BitSeq -> Property
@@ -221,7 +227,7 @@ prop_toChunksDeflate_remainder (ChunkType @chunkType) bitSeq = do
 prop_toChunksDeflate_exact :: ChunkType -> Property
 prop_toChunksDeflate_exact (ChunkType @chunkType) =
   forAll (listOf (arbitrary @chunkType)) $ \chunks ->
-    BitSeq.toChunksDeflate @chunkType (foldMap BitSeq.fromChunk chunks)
+    BitSeq.toChunksDeflate @chunkType (BitSeq.fromChunks chunkBitOrder chunks)
       === (BitSeq.empty, chunks)
 
 --------------------------------------------------------------------------------
@@ -232,7 +238,7 @@ prop_toChunksDeflate_exact (ChunkType @chunkType) =
 prop_toChunksInflate_prefix :: ChunkType -> Bit -> BitSeq -> Property
 prop_toChunksInflate_prefix (ChunkType @chunkType) paddingBit bitSeq = do
   let chunks = BitSeq.toChunksInflate @chunkType paddingBit bitSeq
-  BitSeq.take (BitSeq.length bitSeq) (BitSeq.fromChunks chunks)
+  BitSeq.take (BitSeq.length bitSeq) (BitSeq.fromChunks chunkBitOrder chunks)
     === bitSeq
 
 -- The padding bits extend the remainder exactly to a chunk boundary.
@@ -240,14 +246,16 @@ prop_toChunksInflate_padding :: ChunkType -> Bit -> BitSeq -> Property
 prop_toChunksInflate_padding (ChunkType @chunkType) paddingBit bitSeq = do
   let chunks = BitSeq.toChunksInflate @chunkType paddingBit bitSeq
   let paddingLength = negate (BitSeq.length bitSeq) `mod` width @chunkType
-  BitSeq.drop (BitSeq.length bitSeq) (BitSeq.fromChunks chunks)
+  BitSeq.drop (BitSeq.length bitSeq) (BitSeq.fromChunks chunkBitOrder chunks)
     === BitSeq.replicate paddingLength paddingBit
 
 -- When the chunk width exactly divides the sequence, there is no padding.
 prop_toChunksInflate_exact :: ChunkType -> Bit -> Property
 prop_toChunksInflate_exact (ChunkType @chunkType) paddingBit =
   forAll (listOf (arbitrary @chunkType)) $ \chunks -> do
-    BitSeq.toChunksInflate @chunkType paddingBit (BitSeq.fromChunks chunks)
+    BitSeq.toChunksInflate @chunkType
+      paddingBit
+      (BitSeq.fromChunks chunkBitOrder chunks)
       === chunks
 
 --------------------------------------------------------------------------------
