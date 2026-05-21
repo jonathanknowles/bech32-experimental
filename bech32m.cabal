@@ -74,6 +74,8 @@ test-suite bech32m-test
       Spec.hs
   other-modules:
       Codec.Bech32.Prefix.CharSpec
+      Codec.Bech32.PrefixSpec
+      Codec.Bech32.Suffix.CharSpec
       Codec.Bech32.Suffix.PayloadSpec
       Data.BitSeqSpec
       OtherSpec
