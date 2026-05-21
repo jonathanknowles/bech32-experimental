@@ -1,11 +1,8 @@
-{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module OtherSpec (spec) where
+module Data.BitSpec (spec) where
 
-import Data.Word2 (Word2)
-import Data.Word3 (Word3)
-import Data.Word5 (Word5)
+import Data.Bit (Bit)
 import Test.Hspec (Spec)
 import Test.Hspec.QuickCheck.Classes (testLaws)
 import Test.QuickCheck
@@ -13,6 +10,7 @@ import Test.QuickCheck
   , arbitraryBoundedEnum
   , shrinkBoundedEnum
   )
+import Test.QuickCheck.Arbitrary ()
 import Test.QuickCheck.Classes
   ( bitsLaws
   , boundedEnumLaws
@@ -26,27 +24,7 @@ import Test.QuickCheck.Classes
 
 spec :: Spec
 spec = do
-  testLaws @Word2
-    [ bitsLaws
-    , boundedEnumLaws
-    , eqLaws
-    , ixLaws
-    , numLaws
-    , ordLaws
-    , showLaws
-    , showReadLaws
-    ]
-  testLaws @Word3
-    [ bitsLaws
-    , boundedEnumLaws
-    , eqLaws
-    , ixLaws
-    , numLaws
-    , ordLaws
-    , showLaws
-    , showReadLaws
-    ]
-  testLaws @Word5
+  testLaws @Bit
     [ bitsLaws
     , boundedEnumLaws
     , eqLaws
@@ -61,14 +39,6 @@ spec = do
 -- Arbitrary instances
 --------------------------------------------------------------------------------
 
-instance Arbitrary Word2 where
-  arbitrary = arbitraryBoundedEnum
-  shrink = shrinkBoundedEnum
-
-instance Arbitrary Word3 where
-  arbitrary = arbitraryBoundedEnum
-  shrink = shrinkBoundedEnum
-
-instance Arbitrary Word5 where
+instance Arbitrary Bit where
   arbitrary = arbitraryBoundedEnum
   shrink = shrinkBoundedEnum
