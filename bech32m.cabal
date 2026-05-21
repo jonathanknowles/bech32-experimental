@@ -79,7 +79,7 @@ test-suite bech32m-test
       Codec.Bech32.Suffix.PayloadSpec
       Data.BitSpec
       Data.BitSeqSpec
-      OtherSpec
+      Data.WordSpec
   hs-source-dirs:
       components/bech32m-test
   ghc-options:

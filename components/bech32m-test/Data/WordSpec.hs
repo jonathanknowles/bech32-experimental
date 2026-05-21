@@ -1,7 +1,6 @@
-{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module OtherSpec (spec) where
+module Data.WordSpec (spec) where
 
 import Data.Word2 (Word2)
 import Data.Word3 (Word3)
