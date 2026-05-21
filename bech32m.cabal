@@ -15,11 +15,14 @@ extra-doc-files:    CHANGELOG.md
 -- extra-source-files:
 
 common extensions
-    default-extensions:
+  default-extensions:
+      DataKinds
       ImportQualifiedPost
+      TypeApplications
 
 common warnings
-    ghc-options: -Wall
+  ghc-options:
+      -Wall
 
 custom-setup
   setup-depends:
@@ -28,9 +31,10 @@ custom-setup
     , QuickCheck
 
 library
-    import:           warnings
-                    , extensions
-    exposed-modules:
+  import:
+    , warnings
+    , extensions
+  exposed-modules:
       Codec.Bech32
       Codec.Bech32.Prefix
       Codec.Bech32.Prefix.Char
@@ -44,33 +48,38 @@ library
       Data.Word2
       Data.Word3
       Data.Word5
-    other-modules:
+  other-modules:
       Codec.Bech32.Prefix.Char.Types
       Codec.Bech32.Utilities
-    -- other-extensions:
-    build-depends:
-      , base
-      , containers
-      , finitary
-      , monoid-subclasses
-      , nonempty-containers
-      , text
-      , vector-sized
-    hs-source-dirs:   components/bech32m
-    default-language: Haskell2010
+  build-depends:
+    , base
+    , containers
+    , finitary
+    , monoid-subclasses
+    , nonempty-containers
+    , text
+    , vector-sized
+  hs-source-dirs:
+      components/bech32m
+  default-language:
+      Haskell2010
 
 test-suite bech32m-test
-  import:           warnings
-                  , extensions
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  import:
+    , warnings
+    , extensions
+  type:
+      exitcode-stdio-1.0
+  main-is:
+      Spec.hs
   other-modules:
       Codec.Bech32.Suffix.PayloadSpec
       Data.BitSeqSpec
       OtherSpec
   hs-source-dirs:
       components/bech32m-test
-  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:
+      -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
     , base
     , bech32m
@@ -81,8 +90,9 @@ test-suite bech32m-test
     , QuickCheck
     , quickcheck-classes
   build-tool-depends:
-    hspec-discover:hspec-discover ==2.*
-  default-language: Haskell2010
+      hspec-discover:hspec-discover ==2.*
+  default-language:
+      Haskell2010
 
 test-suite bech32m-test-docs
   build-depends:
@@ -90,10 +100,15 @@ test-suite bech32m-test-docs
     , bech32m
     , doctest
     , QuickCheck
-  x-doctest-options: --verbose
-  type: exitcode-stdio-1.0
-  main-is: Main.hs
+  x-doctest-options:
+      --verbose
+  type:
+      exitcode-stdio-1.0
+  main-is:
+      Main.hs
   hs-source-dirs:
-    components/bech32m-test-docs
-  ghc-options: -threaded
-  default-language: Haskell2010
+      components/bech32m-test-docs
+  ghc-options:
+      -threaded
+  default-language:
+      Haskell2010
