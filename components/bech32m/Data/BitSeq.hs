@@ -25,8 +25,8 @@ module Data.BitSeq
   )
 where
 
-import Data.BitOrder (BitOrder (..))
 import Data.Bit (Bit (B0, B1))
+import Data.BitOrder (BitOrder (..))
 import Data.Bits (Bits (setBit, testBit, zeroBits), FiniteBits (finiteBitSize))
 import Data.List qualified as List
 import Data.Semigroup.Cancellative (LeftReductive, RightReductive)
@@ -125,7 +125,8 @@ takeChunkInflate bitOrder padding (BitSeq bits) = (BitSeq rest, chunk)
         zeroBits
         (zip indices padded)
 
-toChunksDeflate :: forall a. FiniteBits a => BitOrder -> BitSeq -> (BitSeq, [a])
+toChunksDeflate
+  :: forall a. FiniteBits a => BitOrder -> BitSeq -> (BitSeq, [a])
 toChunksDeflate bitOrder (BitSeq bits) = go bits []
   where
     go [] acc = (BitSeq [], reverse acc)
@@ -134,7 +135,8 @@ toChunksDeflate bitOrder (BitSeq bits) = go bits []
         Just (BitSeq rest, chunk) -> go rest (chunk : acc)
         Nothing -> (BitSeq bs, reverse acc)
 
-toChunksInflate :: forall a. FiniteBits a => BitOrder -> Bit -> BitSeq -> [a]
+toChunksInflate
+  :: forall a. FiniteBits a => BitOrder -> Bit -> BitSeq -> [a]
 toChunksInflate bitOrder padding (BitSeq bits) = go bits
   where
     go [] = []

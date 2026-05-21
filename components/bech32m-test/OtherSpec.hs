@@ -6,7 +6,6 @@ module OtherSpec (spec) where
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
 import Codec.Bech32.Prefix.Char (PrefixChar)
-import Codec.Bech32.Prefix.Char qualified as PrefixChar
 import Codec.Bech32.Suffix.Char (SuffixChar)
 import Codec.Bech32.Suffix.Char qualified as SuffixChar
 import Codec.Bech32.Suffix.Payload (Payload)
@@ -107,13 +106,6 @@ spec = do
       , showReadLaws
       ]
   describe "Properties" $ do
-    describe "PrefixChar" $ do
-      it "prop_PrefixChar_toChar_fromCharMaybe" $
-        property
-          prop_PrefixChar_toChar_fromCharMaybe
-      it "prop_PrefixChar_toOrdinal_fromOrdinalMaybe" $
-        property
-          prop_PrefixChar_toOrdinal_fromOrdinalMaybe
     describe "Prefix" $ do
       it "prop_Prefix_append_fromList" $
         property
@@ -176,18 +168,6 @@ instance Arbitrary Word3 where
 instance Arbitrary Word5 where
   arbitrary = arbitraryBoundedEnum
   shrink = shrinkBoundedEnum
-
---------------------------------------------------------------------------------
--- Properties for PrefixChar
---------------------------------------------------------------------------------
-
-prop_PrefixChar_toChar_fromCharMaybe :: PrefixChar -> Property
-prop_PrefixChar_toChar_fromCharMaybe c =
-  PrefixChar.fromCharMaybe (PrefixChar.toChar c) === Just c
-
-prop_PrefixChar_toOrdinal_fromOrdinalMaybe :: PrefixChar -> Property
-prop_PrefixChar_toOrdinal_fromOrdinalMaybe c =
-  PrefixChar.fromOrdinalMaybe (PrefixChar.toOrdinal c) === Just c
 
 --------------------------------------------------------------------------------
 -- Properties for Prefix

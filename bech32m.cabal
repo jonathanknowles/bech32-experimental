@@ -73,6 +73,7 @@ test-suite bech32m-test
   main-is:
       Spec.hs
   other-modules:
+      Codec.Bech32.Prefix.CharSpec
       Codec.Bech32.Suffix.PayloadSpec
       Data.BitSeqSpec
       OtherSpec
