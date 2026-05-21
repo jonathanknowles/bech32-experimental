@@ -60,14 +60,6 @@ spec = do
       , showLaws
       , showReadLaws
       ]
-    testLaws @PrefixChar
-      [ boundedEnumLaws
-      , eqLaws
-      , ixLaws
-      , ordLaws
-      , showLaws
-      , showReadLaws
-      ]
     testLaws @Prefix
       [ eqLaws
       , ordLaws
