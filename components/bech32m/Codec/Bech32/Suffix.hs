@@ -1,6 +1,12 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Codec.Bech32.Suffix where
+module Codec.Bech32.Suffix
+  ( Suffix (..)
+  , fromText
+  , toText
+  , FromTextError (..)
+  )
+  where
 
 import Codec.Bech32.Suffix.Char qualified as SuffixChar
 import Codec.Bech32.Suffix.Checksum (Checksum (..))
@@ -12,29 +18,32 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Word5 (Word5)
 import Numeric.Natural (Natural)
+import qualified Codec.Bech32.Suffix.Checksum as Checksum
 
 data Suffix = Suffix
   { payload :: !Payload
   , checksum :: !Checksum
   }
+  deriving (Eq, Ord, Read, Show)
 
-data DecodeError
+data FromTextError
   = TooShort
   | InvalidChar !Natural
+  deriving (Eq, Ord, Show)
 
-fromText :: Text -> Either DecodeError Suffix
+fromText :: Text -> Either FromTextError Suffix
 fromText t = do
   ws <- parseToWords t
   case List.reverse ws of
     (c5 : c4 : c3 : c2 : c1 : c0 : cs) ->
       Right $
         Suffix
-          (Payload.fromWord5List cs)
+          (Payload.fromWord5List (List.reverse cs))
           (Checksum {c0, c1, c2, c3, c4, c5})
     _ ->
       Left TooShort
   where
-    parseToWords :: Text -> Either DecodeError [Word5]
+    parseToWords :: Text -> Either FromTextError [Word5]
     parseToWords = traverse parseChar . zip [0 ..] . Text.unpack
       where
         parseChar (n, c) =
@@ -42,8 +51,6 @@ fromText t = do
             (InvalidChar n)
             (SuffixChar.toWord5 <$> SuffixChar.fromCharMaybe c)
 
-getPayload :: Suffix -> Payload
-getPayload (Suffix p _) = p
-
-getChecksum :: Suffix -> Checksum
-getChecksum (Suffix _ c) = c
+toText :: Suffix -> Text
+toText Suffix {payload, checksum} =
+  Payload.toText payload <> Checksum.toText checksum

@@ -18,6 +18,8 @@ common extensions
   default-extensions:
       DataKinds
       ImportQualifiedPost
+      NamedFieldPuns
+      OverloadedStrings
       TypeApplications
 
 common warnings
@@ -77,6 +79,7 @@ test-suite bech32m-test
       Codec.Bech32.PrefixSpec
       Codec.Bech32.Suffix.CharSpec
       Codec.Bech32.Suffix.PayloadSpec
+      Codec.Bech32.SuffixSpec
       Data.BitSpec
       Data.BitSeqSpec
       Data.WordSpec
