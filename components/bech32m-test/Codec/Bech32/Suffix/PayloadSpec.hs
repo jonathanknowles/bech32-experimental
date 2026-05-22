@@ -14,9 +14,8 @@ import Codec.Bech32.Suffix.Payload
   , Payload
   )
 import Codec.Bech32.Suffix.Payload qualified as Payload
-import Data.Bit (Bit (B1))
-import Data.BitOrder qualified as BitOrder
-import Data.BitSeq qualified as BitSeq
+import Data.Bits (FiniteBits (countTrailingZeros))
+import Data.Maybe (listToMaybe)
 import Data.Word (Word8)
 import Data.Word5 (Word5)
 import Test.Hspec (Spec)
@@ -117,14 +116,14 @@ prop_toWord8List_fromWord8List :: Payload -> Property
 prop_toWord8List_fromWord8List p
   | paddingLength > 4 =
       Payload.toWord8List p === Left PaddingTooLong
-  | BitSeq.any (== B1) padding =
+  | Just lastWord <- maybeLastWord
+  , countTrailingZeros lastWord < paddingLength =
       Payload.toWord8List p === Left PaddingNonZero
   | otherwise =
       fmap Payload.fromWord8List (Payload.toWord8List p) === Right p
   where
+    maybeLastWord = listToMaybe $ reverse $ Payload.toWord5List p
     paddingLength = (Payload.length p * 5) `mod` 8
-    padding = BitSeq.drop (BitSeq.length bitSeq - paddingLength) bitSeq
-    bitSeq = BitSeq.fromChunks BitOrder.FromMSBToLSB $ Payload.toWord5List p
 
 -- Padding is too long if (Payload.length p `mod` 8) `elem` [1, 3, 6]
 --
