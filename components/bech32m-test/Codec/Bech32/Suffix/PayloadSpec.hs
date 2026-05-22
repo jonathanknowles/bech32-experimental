@@ -127,16 +127,15 @@ prop_toWord8List_fromWord8List p
 
 -- Padding is too long if (Payload.length p `mod` 8) `elem` [1, 3, 6]
 --
--- Word8 count | Word5 count | Padding bits
---
---  0             0            0
---  1             2            2
---  2             4            4
---  3             5            1
---  4             7            3
---  5             8            0
---  6            10            2
---  7            12            4
---  8            13            1
---  9            15            3
--- 10            16            0
+-- ┌─────────┬─────────┬─────────┐
+-- │   Word8 │ Minimal │ Minimal │
+-- │   count │   Word5 │ padding │
+-- │ (mod 5) │   count │     bit │
+-- │         │         │   count │
+-- ├─────────┼─────────┼─────────┤
+-- │       0 │       0 │       0 │
+-- │       1 │       2 │       2 │
+-- │       2 │       4 │       4 │
+-- │       3 │       5 │       1 │
+-- │       4 │       7 │       3 │
+-- └─────────┴─────────┴─────────┘

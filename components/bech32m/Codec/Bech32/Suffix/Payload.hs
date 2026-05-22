@@ -71,7 +71,7 @@ instance Show Payload where
 length :: Payload -> Int
 length (Payload cs) = Seq.length cs
 
--- | Constructs a 'Payload' from a list of words.
+-- | Constructs a 'Payload' from a list of `Word5` values.
 --
 -- >>> fromWord5List [0 .. 31]
 -- fromSymbol @"QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L"

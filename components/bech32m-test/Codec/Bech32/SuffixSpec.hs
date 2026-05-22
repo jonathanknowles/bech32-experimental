@@ -8,7 +8,7 @@ import Codec.Bech32.Suffix.Checksum (Checksum (..))
 import Codec.Bech32.Suffix.Payload (Payload)
 import Codec.Bech32.Suffix.Payload qualified as Payload
 import Data.Word5 (Word5)
-import Test.Hspec (Spec, describe)
+import Test.Hspec (Spec)
 import Test.Hspec.QuickCheck (prop)
 import Test.Hspec.QuickCheck.Classes (testLaws)
 import Test.QuickCheck
@@ -29,13 +29,12 @@ import Test.QuickCheck.Classes
 
 spec :: Spec
 spec = do
-  describe "Class laws" $ do
-    testLaws @Suffix
-      [ eqLaws
-      , ordLaws
-      , showLaws
-      , showReadLaws
-      ]
+  testLaws @Suffix
+    [ eqLaws
+    , ordLaws
+    , showLaws
+    , showReadLaws
+    ]
   prop "prop_toText_fromText"
     \\\ prop_toText_fromText
 

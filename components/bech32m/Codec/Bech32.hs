@@ -1,7 +1,12 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Codec.Bech32 where
+module Codec.Bech32
+  ( encode
+  , decode
+  , DecodeError (..)
+  )
+where
 
 import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
@@ -27,8 +32,8 @@ import Numeric.Natural (Natural)
 separatorChar :: Char
 separatorChar = '1'
 
-humanReadablePartToWords :: Prefix -> [Word5]
-humanReadablePartToWords (Prefix.toList -> cs) =
+prefixToWord5List :: Prefix -> [Word5]
+prefixToWord5List (Prefix.toList -> cs) =
   hiWords <> [0] <> loWords
   where
     hiWords = ordinals <&> Word5.fromIntegral . (.>>. 5)
@@ -53,7 +58,7 @@ polymod = foldl' step 1
 
 computeChecksum :: Prefix -> Payload -> Checksum
 computeChecksum hrp dp =
-  let values = humanReadablePartToWords hrp <> Payload.toWord5List dp
+  let values = prefixToWord5List hrp <> Payload.toWord5List dp
       remainder = polymod values `xor` 1 -- XOR 1 for Bech32 final constant
   in Checksum
        (Word5.fromIntegral $ (remainder `shiftR` 25) .&. 0x1f)
@@ -97,10 +102,10 @@ decode t = do
         Left (Suffix.InvalidChar n) -> Left (InvalidChar (m + n + 1))
 
 encode :: Prefix -> Payload -> Text
-encode hrp dp =
-  Prefix.toText hrp
+encode prefix payload =
+  Prefix.toText prefix
     <> Text.singleton separatorChar
-    <> Payload.toText dp
+    <> Payload.toText payload
     <> Checksum.toText cs
   where
-    cs = computeChecksum hrp dp
+    cs = computeChecksum prefix payload

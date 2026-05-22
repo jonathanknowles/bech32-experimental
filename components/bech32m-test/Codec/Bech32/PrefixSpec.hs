@@ -6,7 +6,7 @@ import Codec.Bech32.Prefix (Prefix)
 import Codec.Bech32.Prefix qualified as Prefix
 import Codec.Bech32.Prefix.Char (PrefixChar)
 import Data.List.NonEmpty (NonEmpty)
-import Test.Hspec (Spec, describe)
+import Test.Hspec (Spec)
 import Test.Hspec.QuickCheck (prop)
 import Test.Hspec.QuickCheck.Classes (testLaws)
 import Test.QuickCheck
@@ -28,14 +28,13 @@ import Test.QuickCheck.Classes
 
 spec :: Spec
 spec = do
-  describe "Class laws" $ do
-    testLaws @Prefix
-      [ eqLaws
-      , ordLaws
-      , semigroupLaws
-      , showLaws
-      , showReadLaws
-      ]
+  testLaws @Prefix
+    [ eqLaws
+    , ordLaws
+    , semigroupLaws
+    , showLaws
+    , showReadLaws
+    ]
   prop "prop_append_fromList"
     \\\ prop_append_fromList
   prop "prop_append_toList"
