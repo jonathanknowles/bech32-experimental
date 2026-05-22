@@ -2,6 +2,10 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ViewPatterns #-}
 
+-- TODO:
+-- Benchmark
+-- Bech32 and Bech32m variants
+
 module Codec.Bech32
   ( encode
   , decode
