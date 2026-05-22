@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -19,6 +20,7 @@ import Codec.Bech32.Suffix.Payload (Payload)
 import Codec.Bech32.Suffix.Payload qualified as Payload
 import Codec.Bech32.Utilities (maybeToEither)
 import Codec.Bech32.Utilities qualified as Text (splitOnLast)
+import Data.Bifunctor (Bifunctor (first))
 import Data.Bits (Bits (shiftL, shiftR, testBit, xor, (.&.)), (.>>.))
 import Data.Foldable qualified as Foldable
 import Data.Functor ((<&>))
@@ -28,6 +30,51 @@ import Data.Word (Word32)
 import Data.Word5 (Word5)
 import Data.Word5 qualified as Word5
 import Numeric.Natural (Natural)
+
+encode :: Prefix -> Payload -> Text
+encode prefix payload =
+  Prefix.toText prefix
+    <> Text.singleton separatorChar
+    <> Payload.toText payload
+    <> Checksum.toText cs
+  where
+    cs = computeChecksum prefix payload
+
+decode :: Text -> Either DecodeError (Prefix, Payload)
+decode t = do
+  (prefixText, suffixText) <- splitOnSeparator t
+  prefix <- parsePrefix prefixText
+  suffix <- parseSuffix suffixText (fromIntegral (Text.length prefixText) + 1)
+  let Suffix {payload, checksum} = suffix
+  if computeChecksum prefix payload == checksum
+    then Right (prefix, payload)
+    else Left InvalidChecksum
+  where
+    splitOnSeparator :: Text -> Either DecodeError (Text, Text)
+    splitOnSeparator =
+      maybeToEither MissingSeparator . Text.splitOnLast separatorChar
+
+    parsePrefix :: Text -> Either DecodeError Prefix
+    parsePrefix p = first mapError $ Prefix.fromText p
+      where
+        mapError = \case
+          Prefix.FromTextErrorEmpty -> PrefixTooShort
+          Prefix.FromTextErrorInvalidChar n -> InvalidChar n
+
+    parseSuffix :: Text -> Natural -> Either DecodeError Suffix
+    parseSuffix s m = first mapError $ Suffix.fromText s
+      where
+        mapError = \case
+          Suffix.TooShort -> SuffixTooShort
+          Suffix.InvalidChar n -> InvalidChar (m + n + 1)
+
+data DecodeError
+  = MissingSeparator
+  | PrefixTooShort
+  | SuffixTooShort
+  | InvalidChar !Natural
+  | InvalidChecksum
+  deriving (Eq, Ord, Show)
 
 separatorChar :: Char
 separatorChar = '1'
@@ -67,45 +114,3 @@ computeChecksum hrp dp =
        (Word5.fromIntegral $ (remainder `shiftR` 10) .&. 0x1f)
        (Word5.fromIntegral $ (remainder `shiftR` 5) .&. 0x1f)
        (Word5.fromIntegral $ remainder .&. 0x1f)
-
-data DecodeError
-  = MissingSeparator
-  | PrefixTooShort
-  | SuffixTooShort
-  | InvalidChar !Natural
-  | InvalidChecksum
-  deriving (Eq, Ord, Show)
-
-decode :: Text -> Either DecodeError (Prefix, Payload)
-decode t = do
-  (prefixText, suffixText) <- splitOnSeparator t
-  prefix <- parsePrefix prefixText
-  suffix <- parseSuffix suffixText (fromIntegral (Text.length prefixText) + 1)
-  let Suffix {payload, checksum} = suffix
-  if computeChecksum prefix payload == checksum
-    then Right (prefix, payload)
-    else Left InvalidChecksum
-  where
-    splitOnSeparator =
-      maybeToEither MissingSeparator . Text.splitOnLast separatorChar
-
-    parsePrefix p =
-      case Prefix.fromText p of
-        Right prefix -> Right prefix
-        Left Prefix.FromTextErrorEmpty -> Left PrefixTooShort
-        Left (Prefix.FromTextErrorInvalidChar n) -> Left (InvalidChar n)
-
-    parseSuffix s m =
-      case Suffix.fromText s of
-        Right suffix -> Right suffix
-        Left Suffix.TooShort -> Left SuffixTooShort
-        Left (Suffix.InvalidChar n) -> Left (InvalidChar (m + n + 1))
-
-encode :: Prefix -> Payload -> Text
-encode prefix payload =
-  Prefix.toText prefix
-    <> Text.singleton separatorChar
-    <> Payload.toText payload
-    <> Checksum.toText cs
-  where
-    cs = computeChecksum prefix payload
