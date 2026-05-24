@@ -37,10 +37,12 @@ import Numeric.Natural (Natural)
 
 encode :: Prefix -> Payload -> Text
 encode prefix payload =
-  Prefix.toText prefix
-    <> Text.singleton separatorChar
-    <> Payload.toText payload
-    <> Checksum.toText cs
+  Text.concat
+    [ Prefix.toText prefix
+    , Text.singleton separatorChar
+    , Payload.toText payload
+    , Checksum.toText cs
+    ]
   where
     cs = computeChecksum prefix payload
 
