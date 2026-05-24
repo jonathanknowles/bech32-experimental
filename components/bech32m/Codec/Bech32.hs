@@ -2,6 +2,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ViewPatterns #-}
 
+{- HLINT ignore "Redundant bracket" -}
+
 -- TODO:
 -- Benchmark
 -- Bech32 and Bech32m variants
@@ -41,10 +43,8 @@ encode prefix payload =
     [ Prefix.toText prefix
     , Text.singleton separatorChar
     , Payload.toText payload
-    , Checksum.toText cs
+    , Checksum.toText (computeChecksum prefix payload)
     ]
-  where
-    cs = computeChecksum prefix payload
 
 decode :: Text -> Either DecodeError (Prefix, Payload)
 decode t = do
@@ -85,6 +85,38 @@ data DecodeError
 separatorChar :: Char
 separatorChar = '1'
 
+computeChecksum :: Prefix -> Payload -> Checksum
+computeChecksum hrp dp =
+  Checksum
+    (Word5.fromIntegral $ (remainder `shiftR` 25) .&. 0x1f)
+    (Word5.fromIntegral $ (remainder `shiftR` 20) .&. 0x1f)
+    (Word5.fromIntegral $ (remainder `shiftR` 15) .&. 0x1f)
+    (Word5.fromIntegral $ (remainder `shiftR` 10) .&. 0x1f)
+    (Word5.fromIntegral $ (remainder `shiftR` 05) .&. 0x1f)
+    (Word5.fromIntegral $ (remainder {---------}) .&. 0x1f)
+  where
+    remainder = polymod (values <> replicate 6 0) `xor` 1
+    values = prefixToWord5List hrp <> Payload.toWord5List dp
+
+polymod :: [Word5] -> Word32
+polymod = foldl' step 1
+  where
+    generators :: [Word32]
+    generators = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]
+
+    step :: Word32 -> Word5 -> Word32
+    step c w =
+      foldl
+        (\acc (i, g) -> if testBit c0 i then acc `xor` g else acc)
+        c'
+        (zip [0 .. 4] generators)
+      where
+        c0 :: Word32
+        c0 = fromIntegral (c `shiftR` 25)
+
+        c' :: Word32
+        c' = ((c .&. 0x1ffffff) `shiftL` 5) `xor` fromIntegral (Word5.toWord8 w)
+
 prefixToWord5List :: Prefix -> [Word5]
 prefixToWord5List (Prefix.toList -> cs) =
   hiWords <> [0] <> loWords
@@ -92,31 +124,3 @@ prefixToWord5List (Prefix.toList -> cs) =
     hiWords = ordinals <&> Word5.fromIntegral . (.>>. 5)
     loWords = ordinals <&> Word5.fromIntegral
     ordinals = PrefixChar.toOrdinal <$> Foldable.toList cs
-
-polymod :: [Word5] -> Word32
-polymod = foldl' step 1
-  where
-    step :: Word32 -> Word5 -> Word32
-    step c w =
-      let c0 = fromIntegral (c `shiftR` 25) :: Word32
-          c' =
-            ((c .&. 0x1ffffff) `shiftL` 5)
-              `xor` fromIntegral (Word5.toWord8 w)
-          generators =
-            [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]
-      in foldl
-           (\acc (i, g) -> if testBit c0 i then acc `xor` g else acc)
-           c'
-           (zip [0 .. 4] generators)
-
-computeChecksum :: Prefix -> Payload -> Checksum
-computeChecksum hrp dp =
-  let values = prefixToWord5List hrp <> Payload.toWord5List dp
-      remainder = polymod values `xor` 1 -- XOR 1 for Bech32 final constant
-  in Checksum
-       (Word5.fromIntegral $ (remainder `shiftR` 25) .&. 0x1f)
-       (Word5.fromIntegral $ (remainder `shiftR` 20) .&. 0x1f)
-       (Word5.fromIntegral $ (remainder `shiftR` 15) .&. 0x1f)
-       (Word5.fromIntegral $ (remainder `shiftR` 10) .&. 0x1f)
-       (Word5.fromIntegral $ (remainder `shiftR` 5) .&. 0x1f)
-       (Word5.fromIntegral $ remainder .&. 0x1f)
