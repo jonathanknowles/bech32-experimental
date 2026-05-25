@@ -50,7 +50,37 @@ import Prelude
 -- Type
 --------------------------------------------------------------------------------
 
--- | A valid Bech32 prefix character.
+-- | Represents a __single character__ within a valid human-readable
+--   'Codec.Bech32.Prefix.Prefix' of a Bech32 or Bech32m string.
+--
+-- While the Bech32 and Bech32m specifications (BIP 173 and BIP 350) permit
+-- encoded strings to be either /entirely uppercase/ or /entirely lowercase/
+-- (but not mixed case), normalised strings are /strictly lowercase/.
+--
+-- This type models the exact alphabet permissible in the prefix part of such a
+-- normalised string.
+--
+-- The following table enumerates the complete set of valid prefix characters:
+--
+-- +--------------------------+------------------------------------------+
+-- | Category                 | Allowed Characters                       |
+-- +==========================+==========================================+
+-- | Alphabetical & Numerical | @a–z@ @0–9@                              |
+-- +--------------------------+------------------------------------------+
+-- | Mathematical & Logical   | @+@ @-@ @*@ @/@ @=@ @%@ @^@ @&@ @|@ @~@  |
+-- +--------------------------+------------------------------------------+
+-- | Punctuation & Quotations | @.@ @,@ @:@ @;@ @!@ @?@ @'@ @"@ @`@      |
+-- +--------------------------+------------------------------------------+
+-- | Brackets & Enclosures    | @(@ @)@ @[@ @]@ @{@ @}@ @<@ @>@          |
+-- +--------------------------+------------------------------------------+
+-- | Miscellaneous            | `@` @#@ @$@ @_@ @\\@                     |
+-- +--------------------------+------------------------------------------+
+--
+-- This corresponds to the following pair of contiguous intervals:
+--
+-- > ['!' .. '@']
+-- > ['[' .. '~']
+--
 data PrefixChar
   = PrefixChar_033
   | PrefixChar_034
@@ -143,7 +173,7 @@ instance Show PrefixChar where
 -- >>> fromChar @'a'
 -- fromChar @'a'
 --
--- The character must be in one of the following inclusive intervals:
+-- The character must be in one of the following sets:
 --
 -- > ['!' .. '@']
 -- > ['[' .. '~']
@@ -386,6 +416,33 @@ toChar = \case
   PrefixChar_124 -> '|'
   PrefixChar_125 -> '}'
   PrefixChar_126 -> '~'
+
+-- [a-z]
+-- [0-9]
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+-- [:;<=>?@[\]^_`]
+-- [{|}~]
 
 --------------------------------------------------------------------------------
 -- Conversion to ordinal numbers
