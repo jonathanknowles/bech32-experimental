@@ -58,7 +58,6 @@ import GHC.TypeLits
   , symbolVal
   , type (+)
   )
-import Numeric.Natural (Natural)
 import Text.Read (Lexeme (Ident, Punc), Read (readPrec), lexP, parens, prec)
 import Prelude hiding (length)
 

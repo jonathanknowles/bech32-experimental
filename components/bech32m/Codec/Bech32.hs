@@ -61,10 +61,10 @@ decode text = do
   extractPayload prefix suffix
   where
     normaliseCase :: Text -> Either DecodeError Text
-    normaliseCase t
-      | hasUpper && hasLower = Left MixedCase
-      | hasUpper = Right (Text.toLower t)
-      | otherwise = Right t
+    normaliseCase t =
+      if hasUpper
+        then (if hasLower then Left MixedCase else Right (Text.toLower t))
+        else Right t
       where
         hasUpper = Text.any Char.isUpper t
         hasLower = Text.any Char.isLower t
