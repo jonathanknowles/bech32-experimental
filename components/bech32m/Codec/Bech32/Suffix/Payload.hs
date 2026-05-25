@@ -75,7 +75,7 @@ length (Payload cs) = Seq.length cs
 -- | Constructs a 'Payload' from a list of `Word5` values.
 --
 -- >>> fromWord5List [0 .. 31]
--- fromSymbol @"QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L"
+-- fromSymbol @"qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 fromWord5List :: [Word5] -> Payload
 fromWord5List words = Payload (Seq.fromList words)
 
@@ -106,15 +106,15 @@ toWord8List p
 -- >>> fromSymbol @""
 -- fromSymbol @""
 --
--- >>> fromSymbol @"PQRS"
--- fromSymbol @"PQRS"
+-- >>> fromSymbol @"pqrs"
+-- fromSymbol @"pqrs"
 --
--- >>> fromSymbol @"ABCD"
+-- >>> fromSymbol @"abcd"
 -- ...
---     • "ABCD"
+--     • "abcd"
 --         ^
 --       Invalid character at indicated position.
---       Expected a character from the set [023456789ACDEFGHJKLMNPQRSTUVWXYZ].
+--       Expected a character from the set [023456789acdefghjklmnpqrstuvwxyz].
 -- ...
 fromSymbol :: forall s. KnownValidSymbol s => Payload
 fromSymbol =
@@ -160,7 +160,7 @@ type family
 
 type InvalidCharErrorMessage =
   TypeError.Text
-    "Expected a character from the set [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
+    "Expected a character from the set [023456789acdefghjklmnpqrstuvwxyz]."
 
 data ParseError
   = ParseErrorInvalidChar Natural
