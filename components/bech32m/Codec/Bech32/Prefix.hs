@@ -217,7 +217,7 @@ data FromTextError
   = -- | Indicates that the given 'Text' is empty.
     FromTextErrorEmpty
   | -- | Indicates that the character at the given 0-based index is not valid.
-    FromTextErrorInvalidChar Natural
+    FromTextErrorInvalidChar Int
   deriving (Eq, Show)
 
 --------------------------------------------------------------------------------

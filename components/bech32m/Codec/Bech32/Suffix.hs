@@ -6,10 +6,11 @@ module Codec.Bech32.Suffix
   , toText
   , FromTextError (..)
   )
-  where
+where
 
 import Codec.Bech32.Suffix.Char qualified as SuffixChar
 import Codec.Bech32.Suffix.Checksum (Checksum (..))
+import Codec.Bech32.Suffix.Checksum qualified as Checksum
 import Codec.Bech32.Suffix.Payload (Payload)
 import Codec.Bech32.Suffix.Payload qualified as Payload
 import Codec.Bech32.Utilities (maybeToEither)
@@ -17,8 +18,6 @@ import Data.List qualified as List
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Word5 (Word5)
-import Numeric.Natural (Natural)
-import qualified Codec.Bech32.Suffix.Checksum as Checksum
 
 data Suffix = Suffix
   { payload :: !Payload
@@ -28,7 +27,7 @@ data Suffix = Suffix
 
 data FromTextError
   = TooShort
-  | InvalidChar !Natural
+  | InvalidChar !Int
   deriving (Eq, Ord, Show)
 
 fromText :: Text -> Either FromTextError Suffix

@@ -150,7 +150,7 @@ instance Show PrefixChar where
 --
 -- Applying this function to an invalid character will result in a type error:
 --
--- >>> fromChar @' '
+-- >>> fromChar @'Z'
 -- ...
 -- ... Expected a character in one of the following inclusive intervals:
 -- ...   ['!' .. '@']
@@ -174,7 +174,7 @@ fromChar =
 --
 -- Applying this function to an invalid character will evaluate to 'Nothing':
 --
--- >>> fromCharMaybe ' '
+-- >>> fromCharMaybe 'Z'
 -- Nothing
 fromCharMaybe :: Char -> Maybe PrefixChar
 fromCharMaybe = fromOrdinalMaybe . Char.ord
