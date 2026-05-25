@@ -6,13 +6,23 @@
 
 module Codec.Bech32.Utilities where
 
-import Data.Kind (Constraint)
+import Data.Kind (Constraint, Type)
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Type.Bool (Not)
+import Data.Type.Bool (Not, type (&&))
+import Data.Type.Equality (type (==))
 import GHC.TypeError (Assert, ErrorMessage (type (:$$:)), TypeError)
 import GHC.TypeError qualified as TypeError
-import GHC.TypeLits (AppendSymbol, ConsSymbol, Nat, Symbol, type (+), type (-))
+import GHC.TypeLits
+  ( AppendSymbol
+  , CmpChar
+  , CmpNat
+  , ConsSymbol
+  , Nat
+  , Symbol
+  , type (+)
+  , type (-)
+  )
 
 fromRight :: (a -> b) -> Either a b -> b
 fromRight = (`either` id)
@@ -33,7 +43,7 @@ type family
   InvalidCharError
     (invalidSymbol :: Symbol)
     (charIndex :: Nat)
-    (message :: Symbol)
+    (message)
     :: Constraint
   where
   InvalidCharError invalidSymbol charIndex message =
@@ -42,7 +52,7 @@ type family
           invalidSymbol
           :$$: TypeError.Text (InvalidCharErrorArrow (charIndex + 1))
           :$$: TypeError.Text "Invalid character at indicated position."
-          :$$: TypeError.Text message
+          :$$: message
       )
 
 type InvalidCharErrorArrow n = ReplicateChar n ' ' `AppendSymbol` "^"
@@ -72,3 +82,27 @@ type family AssertSymbolNotEmpty (s :: Symbol) :: Constraint where
 
 type SymbolEmptyErrorMessage =
   "Expected a non-empty symbol."
+
+data Interval (k :: Type) = k :..: k
+
+type family
+  CharWithinInclusiveInterval
+    (n :: Char)
+    (range :: Interval Char)
+    :: Bool
+  where
+  CharWithinInclusiveInterval (n :: Char) (lo :..: hi) =
+    (&&)
+      (Not (CmpChar n lo == 'LT))
+      (Not (CmpChar n hi == 'GT))
+
+type family
+  NatWithinInclusiveInterval
+    (n :: Nat)
+    (range :: Interval Nat)
+    :: Bool
+  where
+  NatWithinInclusiveInterval (n :: Nat) (lo :..: hi) =
+    (&&)
+      (Not (CmpNat n lo == 'LT))
+      (Not (CmpNat n hi == 'GT))

@@ -100,8 +100,8 @@ instance Show Prefix where
 --
 -- We can then write:
 --
--- >>> fromList [fromChar @'A', fromChar @'B', fromChar @'C', fromChar @'D']
--- fromSymbol @"ABCD"
+-- >>> fromList [fromChar @'a', fromChar @'b', fromChar @'c', fromChar @'d']
+-- fromSymbol @"abcd"
 fromList :: List.NonEmpty PrefixChar -> Prefix
 fromList = Prefix . NESeq.fromList
 
@@ -111,8 +111,8 @@ fromList = Prefix . NESeq.fromList
 
 -- | Constructs a 'Prefix' from a type-level textual 'Symbol'.
 --
--- >>> fromSymbol @"ABCD"
--- fromSymbol @"ABCD"
+-- >>> fromSymbol @"abcd"
+-- fromSymbol @"abcd"
 --
 -- Symbols must be non-empty:
 --
@@ -123,12 +123,14 @@ fromList = Prefix . NESeq.fromList
 --
 -- Symbols must not contain invalid characters:
 --
--- >>> fromSymbol @"ABCD EFGH"
+-- >>> fromSymbol @"abcdZefgh"
 -- ...
---     • "ABCD EFGH"
+--     • "abcdZefgh"
 --            ^
 --       Invalid character at indicated position.
---       Expected a character in the range ['!' .. '~'].
+--       Expected a character in one of the following inclusive intervals:
+--         ['!' .. '@']
+--         ['[' .. '~']
 -- ...
 fromSymbol :: forall s. KnownValidSymbol s => Prefix
 fromSymbol =
@@ -179,8 +181,8 @@ type family
 
 -- | Constructs a 'Prefix' from text.
 --
--- >>> fromText "ABCD"
--- Right (fromSymbol @"ABCD")
+-- >>> fromText "abcd"
+-- Right (fromSymbol @"abcd")
 --
 -- The text must not be non-empty:
 --
@@ -189,7 +191,7 @@ type family
 --
 -- The text must not contain invalid characters:
 --
--- >>> fromText "ABCD EFGH"
+-- >>> fromText "abcdZefgh"
 -- Left (FromTextErrorInvalidChar 4)
 fromText :: Text -> Either FromTextError Prefix
 fromText = assertCharsValid >=> assertNotEmpty
@@ -224,8 +226,8 @@ data FromTextError
 
 -- | Converts a 'Prefix' to a list of characters.
 --
--- >>> toList (fromSymbol @"ABCD")
--- fromChar @'A' :| [fromChar @'B',fromChar @'C',fromChar @'D']
+-- >>> toList (fromSymbol @"abcd")
+-- fromChar @'a' :| [fromChar @'b',fromChar @'c',fromChar @'d']
 toList :: Prefix -> List.NonEmpty PrefixChar
 toList (Prefix cs) = toNonEmpty cs
 
@@ -235,8 +237,8 @@ toList (Prefix cs) = toNonEmpty cs
 
 -- | Converts a 'Prefix' to text.
 --
--- >>> toText (fromSymbol @"ABCD")
--- "ABCD"
+-- >>> toText (fromSymbol @"abcd")
+-- "abcd"
 toText :: Prefix -> Text
 toText (Prefix cs) =
   Text.pack $ PrefixChar.toChar <$> Foldable.toList cs
@@ -247,7 +249,7 @@ toText (Prefix cs) =
 
 -- | Computes the length of a 'Prefix'.
 --
--- >>> length (fromSymbol @"ABCD")
+-- >>> length (fromSymbol @"abcd")
 -- 4
 length :: Prefix -> Int
 length (Prefix cs) = NESeq.length cs

@@ -5,8 +5,15 @@
 {- HLINT ignore "Redundant bracket" -}
 
 -- TODO:
--- Benchmark
+--
+-- Benchmarks
+--
 -- Bech32 and Bech32m variants
+--
+-- Case handling:
+-- BIP-173 specifies that implementations should produce lowercase, but
+-- decoders must accept either all-lowercase or all-uppercase (never mixed).
+-- Mixed case is explicitly invalid.
 
 module Codec.Bech32
   ( encode
@@ -47,7 +54,8 @@ encode prefix payload =
     ]
 
 decode :: Text -> Either DecodeError (Prefix, Payload)
-decode t = do
+decode t' = do
+  let t = Text.toLower t'
   (prefixText, suffixText) <- splitOnSeparator t
   prefix <- parsePrefix prefixText
   suffix <- parseSuffix suffixText (fromIntegral (Text.length prefixText) + 1)
@@ -86,7 +94,7 @@ separatorChar :: Char
 separatorChar = '1'
 
 computeChecksum :: Prefix -> Payload -> Checksum
-computeChecksum hrp dp =
+computeChecksum prefix payload =
   Checksum
     (Word5.fromIntegral $ (remainder `shiftR` 25) .&. 0x1f)
     (Word5.fromIntegral $ (remainder `shiftR` 20) .&. 0x1f)
@@ -96,7 +104,7 @@ computeChecksum hrp dp =
     (Word5.fromIntegral $ (remainder {---------}) .&. 0x1f)
   where
     remainder = polymod (values <> replicate 6 0) `xor` 1
-    values = prefixToWord5List hrp <> Payload.toWord5List dp
+    values = prefixToWord5List prefix <> Payload.toWord5List payload
 
 polymod :: [Word5] -> Word32
 polymod = foldl' step 1

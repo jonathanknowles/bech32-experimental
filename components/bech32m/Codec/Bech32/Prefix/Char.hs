@@ -84,32 +84,6 @@ data PrefixChar
   | PrefixChar_062
   | PrefixChar_063
   | PrefixChar_064
-  | PrefixChar_065
-  | PrefixChar_066
-  | PrefixChar_067
-  | PrefixChar_068
-  | PrefixChar_069
-  | PrefixChar_070
-  | PrefixChar_071
-  | PrefixChar_072
-  | PrefixChar_073
-  | PrefixChar_074
-  | PrefixChar_075
-  | PrefixChar_076
-  | PrefixChar_077
-  | PrefixChar_078
-  | PrefixChar_079
-  | PrefixChar_080
-  | PrefixChar_081
-  | PrefixChar_082
-  | PrefixChar_083
-  | PrefixChar_084
-  | PrefixChar_085
-  | PrefixChar_086
-  | PrefixChar_087
-  | PrefixChar_088
-  | PrefixChar_089
-  | PrefixChar_090
   | PrefixChar_091
   | PrefixChar_092
   | PrefixChar_093
@@ -166,14 +140,21 @@ instance Show PrefixChar where
 
 -- | Constructs a 'PrefixChar' from a type-level character.
 --
--- >>> fromChar @'A'
--- fromChar @'A'
+-- >>> fromChar @'a'
+-- fromChar @'a'
 --
--- The character must be in the range @[\'!\' .. \'~\']@:
+-- The character must be in one of the following inclusive intervals:
+--
+-- > ['!' .. '@']
+-- > ['[' .. '~']
+--
+-- Applying this function to an invalid character will result in a type error:
 --
 -- >>> fromChar @' '
 -- ...
--- ... Expected a character in the range ['!' .. '~'].
+-- ... Expected a character in one of the following inclusive intervals:
+-- ...   ['!' .. '@']
+-- ...   ['[' .. '~']
 -- ...
 fromChar :: forall c. KnownValidChar c => PrefixChar
 fromChar =
@@ -183,10 +164,15 @@ fromChar =
 
 -- | Constructs a 'PrefixChar' from an ordinary character.
 --
--- >>> fromCharMaybe 'A'
--- Just (fromChar @'A')
+-- >>> fromCharMaybe 'a'
+-- Just (fromChar @'a')
 --
--- The character must be in the range @[\'!\' .. \'~\']@:
+-- The character must be in one of the following inclusive intervals:
+--
+-- > ['!' .. '@']
+-- > ['[' .. '~']
+--
+-- Applying this function to an invalid character will evaluate to 'Nothing':
 --
 -- >>> fromCharMaybe ' '
 -- Nothing
@@ -204,19 +190,28 @@ unsafeFromChar = fromMaybe onFailure . fromCharMaybe
 
 -- | Constructs a 'PrefixChar' from a type-level ordinal value.
 --
--- >>> fromOrdinal @65
--- fromChar @'A'
+-- >>> fromOrdinal @97
+-- fromChar @'a'
 --
--- The ordinal value must be in the range @[33 .. 126]@:
+-- The ordinal value must be in one of the following inclusive intervals:
+--
+-- > [33 ..  64]
+-- > [91 .. 126]
+--
+-- Applying this function to an invalid ordinal will result in a type error:
 --
 -- >>> fromOrdinal @32
 -- ...
--- ... Expected an ordinal in the range [33 .. 126].
+-- ... Expected an ordinal in one of the following inclusive intervals:
+-- ...   [33 ..  64]
+-- ...   [91 .. 126]
 -- ...
 --
 -- >>> fromOrdinal @127
 -- ...
--- ... Expected an ordinal in the range [33 .. 126].
+-- ... Expected an ordinal in one of the following inclusive intervals:
+-- ...   [33 ..  64]
+-- ...   [91 .. 126]
 -- ...
 fromOrdinal :: forall c. KnownValidOrdinal c => PrefixChar
 fromOrdinal =
@@ -226,10 +221,15 @@ fromOrdinal =
 
 -- | Constructs a 'PrefixChar' from an ordinal value.
 --
--- >>> fromOrdinalMaybe 65
--- Just (fromChar @'A')
+-- >>> fromOrdinalMaybe 97
+-- Just (fromChar @'a')
 --
--- The character must be in the range @[33 .. 126]@:
+-- The ordinal value must be in one of the following inclusive intervals:
+--
+-- > [33 ..  64]
+-- > [91 .. 126]
+--
+-- Applying this function to an invalid ordinal will evaluate to 'Nothing':
 --
 -- >>> fromOrdinalMaybe 32
 -- Nothing
@@ -270,32 +270,6 @@ fromOrdinalMaybe = \case
   062 -> Just PrefixChar_062
   063 -> Just PrefixChar_063
   064 -> Just PrefixChar_064
-  065 -> Just PrefixChar_065
-  066 -> Just PrefixChar_066
-  067 -> Just PrefixChar_067
-  068 -> Just PrefixChar_068
-  069 -> Just PrefixChar_069
-  070 -> Just PrefixChar_070
-  071 -> Just PrefixChar_071
-  072 -> Just PrefixChar_072
-  073 -> Just PrefixChar_073
-  074 -> Just PrefixChar_074
-  075 -> Just PrefixChar_075
-  076 -> Just PrefixChar_076
-  077 -> Just PrefixChar_077
-  078 -> Just PrefixChar_078
-  079 -> Just PrefixChar_079
-  080 -> Just PrefixChar_080
-  081 -> Just PrefixChar_081
-  082 -> Just PrefixChar_082
-  083 -> Just PrefixChar_083
-  084 -> Just PrefixChar_084
-  085 -> Just PrefixChar_085
-  086 -> Just PrefixChar_086
-  087 -> Just PrefixChar_087
-  088 -> Just PrefixChar_088
-  089 -> Just PrefixChar_089
-  090 -> Just PrefixChar_090
   091 -> Just PrefixChar_091
   092 -> Just PrefixChar_092
   093 -> Just PrefixChar_093
@@ -340,10 +314,78 @@ fromOrdinalMaybe = \case
 
 -- | Converts a 'PrefixChar' to an ordinary character.
 --
--- >>> toChar (fromChar @'A')
--- 'A'
+-- >>> toChar (fromChar @'a')
+-- 'a'
 toChar :: PrefixChar -> Char
-toChar = Char.chr . toOrdinal
+toChar = \case
+  PrefixChar_033 -> '!'
+  PrefixChar_034 -> '"'
+  PrefixChar_035 -> '#'
+  PrefixChar_036 -> '$'
+  PrefixChar_037 -> '%'
+  PrefixChar_038 -> '&'
+  PrefixChar_039 -> '\''
+  PrefixChar_040 -> '('
+  PrefixChar_041 -> ')'
+  PrefixChar_042 -> '*'
+  PrefixChar_043 -> '+'
+  PrefixChar_044 -> ','
+  PrefixChar_045 -> '-'
+  PrefixChar_046 -> '.'
+  PrefixChar_047 -> '/'
+  PrefixChar_048 -> '0'
+  PrefixChar_049 -> '1'
+  PrefixChar_050 -> '2'
+  PrefixChar_051 -> '3'
+  PrefixChar_052 -> '4'
+  PrefixChar_053 -> '5'
+  PrefixChar_054 -> '6'
+  PrefixChar_055 -> '7'
+  PrefixChar_056 -> '8'
+  PrefixChar_057 -> '9'
+  PrefixChar_058 -> ':'
+  PrefixChar_059 -> ';'
+  PrefixChar_060 -> '<'
+  PrefixChar_061 -> '='
+  PrefixChar_062 -> '>'
+  PrefixChar_063 -> '?'
+  PrefixChar_064 -> '@'
+  PrefixChar_091 -> '['
+  PrefixChar_092 -> '\\'
+  PrefixChar_093 -> ']'
+  PrefixChar_094 -> '^'
+  PrefixChar_095 -> '_'
+  PrefixChar_096 -> '`'
+  PrefixChar_097 -> 'a'
+  PrefixChar_098 -> 'b'
+  PrefixChar_099 -> 'c'
+  PrefixChar_100 -> 'd'
+  PrefixChar_101 -> 'e'
+  PrefixChar_102 -> 'f'
+  PrefixChar_103 -> 'g'
+  PrefixChar_104 -> 'h'
+  PrefixChar_105 -> 'i'
+  PrefixChar_106 -> 'j'
+  PrefixChar_107 -> 'k'
+  PrefixChar_108 -> 'l'
+  PrefixChar_109 -> 'm'
+  PrefixChar_110 -> 'n'
+  PrefixChar_111 -> 'o'
+  PrefixChar_112 -> 'p'
+  PrefixChar_113 -> 'q'
+  PrefixChar_114 -> 'r'
+  PrefixChar_115 -> 's'
+  PrefixChar_116 -> 't'
+  PrefixChar_117 -> 'u'
+  PrefixChar_118 -> 'v'
+  PrefixChar_119 -> 'w'
+  PrefixChar_120 -> 'x'
+  PrefixChar_121 -> 'y'
+  PrefixChar_122 -> 'z'
+  PrefixChar_123 -> '{'
+  PrefixChar_124 -> '|'
+  PrefixChar_125 -> '}'
+  PrefixChar_126 -> '~'
 
 --------------------------------------------------------------------------------
 -- Conversion to ordinal numbers
@@ -351,8 +393,8 @@ toChar = Char.chr . toOrdinal
 
 -- | Converts a 'PrefixChar' to an ordinal number.
 --
--- >>> toOrdinal (fromOrdinal @65)
--- 65
+-- >>> toOrdinal (fromOrdinal @97)
+-- 97
 toOrdinal :: PrefixChar -> Int
 toOrdinal = \case
   PrefixChar_033 -> 033
@@ -387,32 +429,6 @@ toOrdinal = \case
   PrefixChar_062 -> 062
   PrefixChar_063 -> 063
   PrefixChar_064 -> 064
-  PrefixChar_065 -> 065
-  PrefixChar_066 -> 066
-  PrefixChar_067 -> 067
-  PrefixChar_068 -> 068
-  PrefixChar_069 -> 069
-  PrefixChar_070 -> 070
-  PrefixChar_071 -> 071
-  PrefixChar_072 -> 072
-  PrefixChar_073 -> 073
-  PrefixChar_074 -> 074
-  PrefixChar_075 -> 075
-  PrefixChar_076 -> 076
-  PrefixChar_077 -> 077
-  PrefixChar_078 -> 078
-  PrefixChar_079 -> 079
-  PrefixChar_080 -> 080
-  PrefixChar_081 -> 081
-  PrefixChar_082 -> 082
-  PrefixChar_083 -> 083
-  PrefixChar_084 -> 084
-  PrefixChar_085 -> 085
-  PrefixChar_086 -> 086
-  PrefixChar_087 -> 087
-  PrefixChar_088 -> 088
-  PrefixChar_089 -> 089
-  PrefixChar_090 -> 090
   PrefixChar_091 -> 091
   PrefixChar_092 -> 092
   PrefixChar_093 -> 093

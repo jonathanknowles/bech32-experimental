@@ -13,15 +13,17 @@ module Codec.Bech32.Prefix.Char.Types
   )
 where
 
+import Codec.Bech32.Utilities
+  ( CharWithinInclusiveInterval
+  , Interval (..)
+  , NatWithinInclusiveInterval
+  )
 import Data.Kind (Constraint)
-import Data.Type.Bool (Not, type (&&))
-import Data.Type.Equality (type (==))
-import GHC.TypeError (Assert, TypeError)
+import Data.Type.Bool (type (||))
+import GHC.TypeError (Assert, ErrorMessage (type (:$$:)), TypeError)
 import GHC.TypeError qualified as TypeError
 import GHC.TypeLits
-  ( CmpChar
-  , CmpNat
-  , KnownChar
+  ( KnownChar
   , KnownNat
   , Nat
   )
@@ -29,29 +31,35 @@ import GHC.TypeLits
 type family KnownValidChar (c :: Char) :: Constraint where
   KnownValidChar c =
     ( KnownChar c
-    , Assert (ValidChar c) (TypeError (TypeError.Text InvalidChar))
+    , Assert (ValidChar c) (TypeError InvalidChar)
     )
 
 type family KnownValidOrdinal (c :: Nat) :: Constraint where
   KnownValidOrdinal c =
     ( KnownNat c
-    , Assert (ValidOrdinal c) (TypeError (TypeError.Text InvalidOrdinal))
+    , Assert (ValidOrdinal c) (TypeError InvalidOrdinal)
     )
 
 type family ValidChar (c :: Char) :: Bool where
   ValidChar c =
-    (&&)
-      (Not (CmpChar c '!' == 'LT))
-      (Not (CmpChar c '~' == 'GT))
+    (||)
+      (CharWithinInclusiveInterval c ('!' :..: '@'))
+      (CharWithinInclusiveInterval c ('[' :..: '~'))
 
 type family ValidOrdinal (c :: Nat) :: Bool where
   ValidOrdinal c =
-    (&&)
-      (Not (CmpNat c 033 == 'LT))
-      (Not (CmpNat c 126 == 'GT))
+    (||)
+      (NatWithinInclusiveInterval c (033 :..: 064))
+      (NatWithinInclusiveInterval c (091 :..: 126))
 
 type InvalidChar =
-  "Expected a character in the range ['!' .. '~']."
+  TypeError.Text
+    "Expected a character in one of the following inclusive intervals:"
+    :$$: TypeError.Text "  ['!' .. '@']"
+    :$$: TypeError.Text "  ['[' .. '~']"
 
 type InvalidOrdinal =
-  "Expected an ordinal in the range [33 .. 126]."
+  TypeError.Text
+    "Expected an ordinal in one of the following inclusive intervals:"
+    :$$: TypeError.Text "  [33 ..  64]"
+    :$$: TypeError.Text "  [91 .. 126]"

@@ -43,6 +43,7 @@ import Data.Text qualified as Text
 import Data.Type.Bool (If)
 import Data.Word (Word8)
 import Data.Word5 (Word5)
+import GHC.TypeError qualified as TypeError
 import GHC.TypeLits (KnownSymbol, Symbol, UnconsSymbol, symbolVal, type (+))
 import GHC.TypeNats (Nat)
 import Numeric.Natural (Natural)
@@ -158,7 +159,8 @@ type family
     InvalidCharError s n InvalidCharErrorMessage
 
 type InvalidCharErrorMessage =
-  "Expected a character from the set [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
+  TypeError.Text
+    "Expected a character from the set [023456789ACDEFGHJKLMNPQRSTUVWXYZ]."
 
 data ParseError
   = ParseErrorInvalidChar Natural
