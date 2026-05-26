@@ -62,26 +62,26 @@ import Prelude
 --
 -- The following table enumerates the complete set of valid prefix characters:
 --
--- +--------------------------+------------------------------------------+
--- | Category                 | Allowed Characters                       |
--- +==========================+==========================================+
--- | Alphabetical & Numerical | @a–z 0–9@                                |
--- +--------------------------+------------------------------------------+
--- | Mathematical & Logical   | @+ - * / = % ^ & | ~@                    |
--- +--------------------------+------------------------------------------+
--- | Punctuation & Quotations | @. , : ; ! ? ' " `@                      |
--- +--------------------------+------------------------------------------+
--- | Brackets & Enclosures    | @( ) [ ] { } < >@                        |
--- +--------------------------+------------------------------------------+
--- | Miscellaneous            | @\@ # $ _ \\@                            |
--- +--------------------------+------------------------------------------+
+-- +--------------------------+-----------------------+
+-- | Category                 | Allowed Characters    |
+-- +==========================+=======================+
+-- | Alphabetical & Numerical | @a–z 0–9@             |
+-- +--------------------------+-----------------------+
+-- | Mathematical & Logical   | @+ - * / = % ^ & | ~@ |
+-- +--------------------------+-----------------------+
+-- | Punctuation & Quotations | @. , : ; ! ? ' " `@   |
+-- +--------------------------+-----------------------+
+-- | Brackets & Enclosures    | @( ) [ ] { } < >@     |
+-- +--------------------------+-----------------------+
+-- | Miscellaneous            | @\@ # $ _ \\@         |
+-- +--------------------------+-----------------------+
 --
--- The set of valid characters is defined by the union of the following two
--- inclusive Unicode code point intervals:
+-- A character is valid if (and only if) its Unicode code point belongs to
+-- one of the following inclusive intervals:
 --
 -- > [33 ..  64]
 -- > [91 .. 126]
---
+-- >
 data PrefixChar
   = PrefixChar_033
   | PrefixChar_034
