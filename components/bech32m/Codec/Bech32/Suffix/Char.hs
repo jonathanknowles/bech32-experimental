@@ -37,6 +37,25 @@ import GHC.TypeError qualified as TypeError
 import GHC.TypeLits (KnownChar, charVal)
 import Text.Read (Lexeme (Ident, Punc), lexP, parens, prec, readPrec)
 
+-- | Represents a __single character__ within a valid
+--   'Codec.Bech32.Prefix.Suffix' of a Bech32 or Bech32m string.
+--
+-- While the Bech32 and Bech32m specifications (BIP 173 and BIP 350) permit
+-- encoded strings to be either /entirely uppercase/ or /entirely lowercase/
+-- (but not mixed case), normalised strings are /strictly lowercase/.
+--
+-- This type models the exact alphabet permissible in the suffix part of such a
+-- normalised string. As such, uppercase letters are not represented.
+--
+-- The following table enumerates the complete set of valid suffix characters:
+--
+-- +--------------+-------------------------------------------------+
+-- | Category     | Allowed Characters                              |
+-- +==============+=================================================+
+-- | Alphabetical | @a c d e f g h j k l m n p q r s t u v w x y z@ |
+-- +--------------+-------------------------------------------------+
+-- | Numerical    | @0 2 3 4 5 6 7 8@                               |
+-- +--------------+-------------------------------------------------+
 data SuffixChar
   = SuffixChar_0
   | SuffixChar_2

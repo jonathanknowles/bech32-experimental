@@ -10,11 +10,9 @@
 --
 -- Bech32 and Bech32m variants
 --
--- Case handling:
--- BIP-173 specifies that implementations should produce lowercase, but
--- decoders must accept either all-lowercase or all-uppercase (never mixed).
--- Mixed case is explicitly invalid.
-
+-- Error detection / correction.
+-- Remove ordinals code for prefix chars, or add it to suffixes too.
+--
 module Codec.Bech32
   ( encode
   , decode

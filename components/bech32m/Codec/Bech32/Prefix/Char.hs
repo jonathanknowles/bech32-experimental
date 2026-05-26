@@ -58,28 +58,29 @@ import Prelude
 -- (but not mixed case), normalised strings are /strictly lowercase/.
 --
 -- This type models the exact alphabet permissible in the prefix part of such a
--- normalised string.
+-- normalised string. As such, uppercase letters are not represented.
 --
 -- The following table enumerates the complete set of valid prefix characters:
 --
 -- +--------------------------+------------------------------------------+
 -- | Category                 | Allowed Characters                       |
 -- +==========================+==========================================+
--- | Alphabetical & Numerical | @a–z@ @0–9@                              |
+-- | Alphabetical & Numerical | @a–z 0–9@                                |
 -- +--------------------------+------------------------------------------+
--- | Mathematical & Logical   | @+@ @-@ @*@ @/@ @=@ @%@ @^@ @&@ @|@ @~@  |
+-- | Mathematical & Logical   | @+ - * / = % ^ & | ~@                    |
 -- +--------------------------+------------------------------------------+
--- | Punctuation & Quotations | @.@ @,@ @:@ @;@ @!@ @?@ @'@ @"@ @`@      |
+-- | Punctuation & Quotations | @. , : ; ! ? ' " `@                      |
 -- +--------------------------+------------------------------------------+
--- | Brackets & Enclosures    | @(@ @)@ @[@ @]@ @{@ @}@ @<@ @>@          |
+-- | Brackets & Enclosures    | @( ) [ ] { } < >@                        |
 -- +--------------------------+------------------------------------------+
--- | Miscellaneous            | `@` @#@ @$@ @_@ @\\@                     |
+-- | Miscellaneous            | @\@ # $ _ \\@                            |
 -- +--------------------------+------------------------------------------+
 --
--- This corresponds to the following pair of contiguous intervals:
+-- The set of valid characters is defined by the union of the following two
+-- inclusive Unicode code point intervals:
 --
--- > ['!' .. '@']
--- > ['[' .. '~']
+-- > [33 ..  64]
+-- > [91 .. 126]
 --
 data PrefixChar
   = PrefixChar_033
