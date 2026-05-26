@@ -11,6 +11,7 @@
 -- Bech32 and Bech32m variants
 --
 -- Error detection / correction.
+-- Use "code point" instead of ordinal language (including in this module).
 -- Remove ordinals code for prefix chars, or add it to suffixes too.
 --
 module Codec.Bech32
