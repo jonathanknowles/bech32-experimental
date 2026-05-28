@@ -54,6 +54,7 @@ library
       Codec.Bech32.Prefix.Char.Types
       Codec.Bech32.Utilities
   build-depends:
+    , array
     , base
     , containers
     , finitary

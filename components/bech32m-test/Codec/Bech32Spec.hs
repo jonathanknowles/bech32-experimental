@@ -20,6 +20,8 @@ import Test.QuickCheck
   , (===)
   )
 import Test.QuickCheck.Arbitrary ()
+import Codec.Bech32 (DecodeResult(DecodeResult), variant, prefix, payload)
+import Codec.Bech32 (Variant(Bech32))
 
 spec :: Spec
 spec = do
@@ -55,4 +57,5 @@ instance Arbitrary Word5 where
 
 prop_encode_decode :: Prefix -> Payload -> Property
 prop_encode_decode prefix payload =
-  Bech32.decode (Bech32.encode prefix payload) === Right (prefix, payload)
+  Bech32.decode (Bech32.encode prefix payload)
+    === Right DecodeResult {variant = Bech32, prefix, payload}
