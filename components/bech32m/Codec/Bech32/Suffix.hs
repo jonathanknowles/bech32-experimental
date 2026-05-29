@@ -2,9 +2,11 @@
 
 module Codec.Bech32.Suffix
   ( Suffix (..)
+  , length
   , fromText
-  , toText
   , FromTextError (..)
+  , toText
+  , toWord5List
   )
 where
 
@@ -18,6 +20,7 @@ import Data.List qualified as List
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Word5 (Word5)
+import Prelude hiding (length)
 
 data Suffix = Suffix
   { payload :: !Payload
@@ -29,6 +32,16 @@ data FromTextError
   = TooShort
   | InvalidChar !Int
   deriving (Eq, Ord, Show)
+
+length :: Suffix -> Int
+length Suffix {payload, checksum} =
+  Payload.length payload
+    + Checksum.length checksum
+
+toWord5List :: Suffix -> [Word5]
+toWord5List Suffix {payload, checksum} =
+  Payload.toWord5List payload
+    <> Checksum.toWord5List checksum
 
 fromText :: Text -> Either FromTextError Suffix
 fromText t = do

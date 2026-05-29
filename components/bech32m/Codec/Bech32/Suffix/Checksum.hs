@@ -3,8 +3,10 @@
 
 module Codec.Bech32.Suffix.Checksum
   ( Checksum (..)
+  , length
   , fromText
   , toText
+  , toWord5List
   )
 where
 
@@ -14,6 +16,7 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Word5 (Word5)
 import GHC.Natural (Natural)
+import Prelude hiding (length)
 
 data Checksum = Checksum
   { c0 :: !Word5
@@ -29,6 +32,12 @@ data DecodeError
   = InvalidLength
   | InvalidChar !Natural
   deriving (Eq, Ord, Show)
+
+length :: Checksum -> Int
+length = const 6
+
+toWord5List :: Checksum -> [Word5]
+toWord5List Checksum {c0, c1, c2, c3, c4, c5} = [c0, c1, c2, c3, c4, c5]
 
 fromText :: Text -> Either DecodeError Checksum
 fromText text = do
