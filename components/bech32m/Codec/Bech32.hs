@@ -18,12 +18,12 @@
 module Codec.Bech32
   ( encode
   , decode
-  , Variant (..)
-  , DecodeResult (..)
-  , DecodeError (..)
-  , ErrorDiagnosis (..)
-  , LocatedErrors (..)
-  , CorrectedChar (..)
+  , EncodingVariant (..)
+  , DecodingResult (..)
+  , DecodingError (..)
+  , DecodingErrorDiagnosis (..)
+  , DecodingErrorLocations (..)
+  , DecodingErrorCorrection (..)
   )
 where
 
@@ -64,7 +64,7 @@ encode prefix payload =
     , Checksum.toText (computeChecksum prefix payload)
     ]
 
-decode :: Text -> Either DecodeError DecodeResult
+decode :: Text -> Either DecodingError DecodingResult
 decode text = do
   normalised <- normaliseCase text
   (prefixText, suffixText) <- splitOnSeparator normalised
@@ -72,7 +72,7 @@ decode text = do
   suffix <- parseSuffix suffixText prefix
   verifyAndDiagnose prefix suffix
   where
-    normaliseCase :: Text -> Either DecodeError Text
+    normaliseCase :: Text -> Either DecodingError Text
     normaliseCase t =
       if hasUpper
         then (if hasLower then Left MixedCase else Right (Text.toLower t))
@@ -81,18 +81,18 @@ decode text = do
         hasUpper = Text.any Char.isUpper t
         hasLower = Text.any Char.isLower t
 
-    splitOnSeparator :: Text -> Either DecodeError (Text, Text)
+    splitOnSeparator :: Text -> Either DecodingError (Text, Text)
     splitOnSeparator =
       maybeToEither MissingSeparator . Text.splitOnLast separatorChar
 
-    parsePrefix :: Text -> Either DecodeError Prefix
+    parsePrefix :: Text -> Either DecodingError Prefix
     parsePrefix prefixText = first mapError $ Prefix.fromText prefixText
       where
         mapError = \case
           Prefix.FromTextErrorEmpty -> PrefixTooShort
           Prefix.FromTextErrorInvalidChar n -> InvalidChar n
 
-    parseSuffix :: Text -> Prefix -> Either DecodeError Suffix
+    parseSuffix :: Text -> Prefix -> Either DecodingError Suffix
     parseSuffix suffixText prefix = first mapError $ Suffix.fromText suffixText
       where
         mapError = \case
@@ -107,14 +107,14 @@ decode text = do
 --
 -- 'Bech32' is defined in BIP-173 and uses the constant @0x00000001@.
 -- 'Bech32m' is defined in BIP-350 and uses the constant @0x2bc830a3@.
-data Variant
+data EncodingVariant
   = Bech32
   | Bech32m
   deriving (Eq, Ord, Show)
 
 -- | The result of a successful 'decode'.
-data DecodeResult = DecodeResult
-  { variant :: !Variant
+data DecodingResult = DecodingResult
+  { variant :: !EncodingVariant
   , prefix :: !Prefix
   , payload :: !Payload
   }
@@ -123,13 +123,13 @@ data DecodeResult = DecodeResult
 -- | Describes why a 'decode' failed.
 --
 -- All positions are 0-based indices into the original input 'Text'.
-data DecodeError
+data DecodingError
   = MissingSeparator
   | MixedCase
   | PrefixTooShort
   | SuffixTooShort
-  | InvalidChar !Int
-  | InvalidChecksum !ErrorDiagnosis
+  | InvalidChar !Int -- shoud this give all the positions, and not just one?
+  | InvalidChecksum !DecodingErrorDiagnosis
   deriving (Eq, Ord, Show)
 
 -- | Diagnostic information extracted from a failed checksum.
@@ -138,12 +138,12 @@ data DecodeError
 -- over GF(32), which guarantees detection of all error patterns of weight 1–5.
 -- Of these, patterns of weight 1–2 can additionally be /located/ and
 -- /corrected/ by the decoder.
-data ErrorDiagnosis
+data DecodingErrorDiagnosis
   = -- | The syndrome is consistent with a weight-1 or weight-2 error pattern.
     --   The error positions have been exactly identified and the correct
     --   characters computed, modulo the ~2^{-30} probability of an undetected
     --   weight-6+ pattern masquerading as a low-weight one.
-    WithinCorrectionCapacity !LocatedErrors
+    WithinCorrectionCapacity !DecodingErrorLocations
   | -- | The syndrome is non-zero (errors are therefore certain) but the error
     --   pattern is of weight 3–5, which is beyond the code's correction
     --   capacity. The positions of the errors cannot be determined.
@@ -152,15 +152,16 @@ data ErrorDiagnosis
 
 -- | One or two located and corrected characters.
 --
--- When 'TwoErrors' is returned, the first 'CorrectedChar' has the smaller
--- 'position' (i.e. the errors are presented in left-to-right reading order).
-data LocatedErrors
-  = OneError !CorrectedChar
-  | TwoErrors !CorrectedChar !CorrectedChar
+-- When 'TwoErrors' is returned, the first 'DecodingErrorCorrection' has the
+-- smaller 'position' (i.e. the errors are presented in left-to-right reading
+-- order).
+data DecodingErrorLocations
+  = OneError !DecodingErrorCorrection
+  | TwoErrors !DecodingErrorCorrection !DecodingErrorCorrection
   deriving (Eq, Ord, Show)
 
 -- | A single located error with its corrected character value.
-data CorrectedChar = CorrectedChar
+data DecodingErrorCorrection = DecodingErrorCorrection
   { position :: !Int
   -- ^ 0-based index into the original input 'Text'.
   , corrected :: !Char
@@ -172,14 +173,14 @@ data CorrectedChar = CorrectedChar
 -- Checksum verification and error diagnosis
 --------------------------------------------------------------------------------
 
-verifyAndDiagnose :: Prefix -> Suffix -> Either DecodeError DecodeResult
+verifyAndDiagnose :: Prefix -> Suffix -> Either DecodingError DecodingResult
 verifyAndDiagnose prefix suffix@Suffix {payload} =
   case polymodResult of
     r
       | r == bech32Const ->
-          Right DecodeResult {prefix, payload, variant = Bech32}
+          Right DecodingResult {prefix, payload, variant = Bech32}
       | r == bech32mConst ->
-          Right DecodeResult {prefix, payload, variant = Bech32m}
+          Right DecodingResult {prefix, payload, variant = Bech32m}
       | otherwise ->
           Left $
             InvalidChecksum $
@@ -210,21 +211,21 @@ diagnoseSyndrome
   -- ^ Data word5 values: payload words followed by checksum words.
   -> Word32
   -- ^ Raw polymod result (before XOR with any variant constant).
-  -> ErrorDiagnosis
+  -> DecodingErrorDiagnosis
 diagnoseSyndrome prefixLength suffixLength dataWords polymodResult =
   case pickBest bech32Errors bech32mErrors of
     [] -> WithinDetectionCapacity
     [(p, mag)] ->
       WithinCorrectionCapacity $
-        OneError (makeCorrectedChar p mag)
+        OneError (makeDecodingErrorCorrection p mag)
     [(p1, m1), (p2, m2)] ->
       WithinCorrectionCapacity $
         -- p1 < p2 by contract from locateErrors;
         -- p2 has the smaller string position (further
         -- left), so it is presented first.
         TwoErrors
-          (makeCorrectedChar p2 m2)
-          (makeCorrectedChar p1 m1)
+          (makeDecodingErrorCorrection p2 m2)
+          (makeDecodingErrorCorrection p1 m1)
     _ -> WithinDetectionCapacity -- unreachable
   where
     bech32Errors = locateErrors (polymodResult `xor` bech32Const) suffixLength
@@ -239,20 +240,20 @@ diagnoseSyndrome prefixLength suffixLength dataWords polymodResult =
       | otherwise = bs
 
     -- Convert a (data-position-from-end, error-magnitude) pair into a
-    -- CorrectedChar in string coordinates.
+    -- DecodingErrorCorrection in string coordinates.
     --
     -- Data position p is 0-indexed from the END of the data array:
     --   p = 0                → last character of the checksum
     --   p = suffixLength - 1 → first character of the payload
     --
     -- String index = prefixLength + 1 (separator) + (suffixLength - 1 - p)
-    makeCorrectedChar :: Int -> Word5 -> CorrectedChar
-    makeCorrectedChar p mag =
+    makeDecodingErrorCorrection :: Int -> Word5 -> DecodingErrorCorrection
+    makeDecodingErrorCorrection p mag =
       let dataIdx = suffixLength - 1 - p
           stringIdx = prefixLength + 1 + dataIdx
           received = dataWords !! dataIdx
           corrected_ = xorWord5 received mag
-      in CorrectedChar
+      in DecodingErrorCorrection
            { position = stringIdx
            , corrected = SuffixChar.toChar (SuffixChar.fromWord5 corrected_)
            }
